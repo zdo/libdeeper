@@ -1,0 +1,59 @@
+#ifndef SERIALIZABLE_HPP
+#define SERIALIZABLE_HPP
+
+#include <QJsonValue>
+#include <QJsonObject>
+#include <QJsonArray>
+#include <QVector>
+#include <QSharedPointer>
+
+namespace deeper {
+
+class Serializable {
+public:
+    virtual ~Serializable() {}
+
+    virtual QJsonObject serializeToJson() const = 0;
+    virtual void deserializeFromJson(const QJsonObject &jsonRaw) = 0;
+
+    template <typename T>
+    static QJsonArray toArraySimple(const QVector<T> &src) {
+        QJsonArray result;
+        for (const T &v : src) {
+            result.append(v);
+        }
+        return result;
+    }
+
+    template <typename T>
+    static QJsonArray toArray(const QVector<T> &src) {
+        QJsonArray result;
+        for (const T &v : src) {
+            result.append(v.serializeToJson());
+        }
+        return result;
+    }
+
+    static QVector<int> fromArrayInt(const QJsonArray &src) {
+        QVector<int> result;
+        for (const QJsonValue &v : src) {
+            result.append(v.toInt());
+        }
+        return result;
+    }
+
+    template <typename T>
+    static QVector<T> fromArray(const QJsonArray &src) {
+        QVector<T> result;
+        for (const QJsonValue &v : src) {
+            T t;
+            t.deserializeFromJson(v.toObject());
+            result.append(t);
+        }
+        return result;
+    }
+};
+
+}
+
+#endif // SERIALIZABLE_HPP
