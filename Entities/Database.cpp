@@ -158,15 +158,15 @@ void Database::refresh(bool sync)
     }
 }
 
-void Database::setCategoryParent(const QSharedPointer<Category> &category,
+bool Database::setCategoryParent(const QSharedPointer<Category> &category,
                                  const QSharedPointer<Category> &parentCategory,
                                  int index)
 {
     auto superParent = parentCategory;
     while (!superParent.isNull()) {
-        if (superParent == category) {
+        if (superParent->id() == category->id()) {
             // Can't move category to its child.
-            return;
+            return false;
         }
         superParent = this->parentOfCategory(superParent);
     }
@@ -199,6 +199,7 @@ void Database::setCategoryParent(const QSharedPointer<Category> &category,
     }
 
     this->saveCategoryTree();
+    return true;
 }
 
 } // namespace deeper

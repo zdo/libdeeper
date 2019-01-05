@@ -31,7 +31,7 @@ public:
     void saveCategoryTree();
     QSharedPointer<Category> parentOfCategory(const QSharedPointer<Category> &category);
     void deleteCategory(const QSharedPointer<Category> &category);
-    void setCategoryParent(const QSharedPointer<Category> &category, const QSharedPointer<Category> &parentCategory, int index = -1);
+    bool setCategoryParent(const QSharedPointer<Category> &category, const QSharedPointer<Category> &parentCategory, int index = -1);
 
 public slots:
     void refresh(bool sync=false);
