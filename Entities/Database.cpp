@@ -80,7 +80,9 @@ void Database::deleteCategory(const QSharedPointer<Category> &category)
 {
     auto parentCategory = this->parentOfCategory(category);
 
-    if (!parentCategory.isNull()) {
+    if (parentCategory.isNull()) {
+        m_categoriesTree.removeOne(category);
+    } else {
         auto children = parentCategory->children();
         children.removeOne(category);
         parentCategory->setChildren(children);

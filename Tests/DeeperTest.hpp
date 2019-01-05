@@ -135,6 +135,20 @@ private slots:
         QCOMPARE(m_database->categoriesTree()[1]->id(), "someid");
     }
 
+    void databaseDeleteCategoryRegressive()
+    {
+        this->reloadDatabaseToInitialState();
+
+        auto root = m_database->categoryWithId("someid");
+        auto child1 = m_database->categoryWithId("child1");
+        auto child2 = m_database->categoryWithId("child2");
+        auto root2 = m_database->categoryWithId("root2");
+
+        m_database->deleteCategory(root);
+        QCOMPARE(m_database->categoriesTree().count(), 1);
+        QCOMPARE(m_database->categoriesTree()[0]->id(), "root2");
+    }
+
     void cleanupTestCase()
     {
         QFile::remove(m_jsonTmpPath);
