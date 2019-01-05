@@ -26,9 +26,4 @@ void Goal::deserializeFromJson(const QJsonObject &json)
     m_targetAchievementsCount = json["targetAchievementsCount"].toInt();
 }
 
-int Goal::id() const
-{
-    return m_id;
-}
-
 } // namespace deeper

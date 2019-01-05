@@ -7,10 +7,43 @@
 QT       -= gui
 QT       += core concurrent
 
-TARGET = deeper
-TEMPLATE = lib
+# Enable to test.
+# CONFIG += TESTME
 
-CONFIG += staticlib
+contains(CONFIG, TESTME) {
+    message("Test")
+    TARGET = libdeeper_test
+    CONFIG += testcase
+    QT += testlib
+
+    SOURCES += libdeeper_test.cpp
+
+    HEADERS += Tests/DeeperTest.hpp
+
+    RESOURCES += Tests/TestResources.qrc
+} else {
+    TEMPLATE = lib
+    TARGET = deeper
+    CONFIG += staticlib
+
+unix {
+    target.path = /usr/local/lib
+    INSTALLS += target
+
+    headers.path    = /usr/local/include/libdeeper
+    headers.files   += *.hpp
+    INSTALLS       += headers
+
+    headers1.path    = /usr/local/include/libdeeper/Entities
+    headers1.files   += Entities/*.hpp
+    INSTALLS       += headers1
+
+    headers2.path    = /usr/local/include/libdeeper/Storage
+    headers2.files   += Storage/*.hpp
+    INSTALLS       += headers2
+}
+
+}
 
 # The following define makes your compiler emit warnings if you use
 # any feature of Qt which has been marked as deprecated (the exact warnings
@@ -35,7 +68,8 @@ SOURCES += \
     Storage/StorageLocalJsonFile.cpp \
     Entities/TimeTrack.cpp \
     Entities/Achievement.cpp \
-    Entities/Goal.cpp
+    Entities/Goal.cpp \
+    Entities/HavingId.cpp
 
 HEADERS += \
         libdeeper.hpp \
@@ -52,13 +86,5 @@ HEADERS += \
     Storage/StorageLocalJsonFile.hpp \
     Entities/TimeTrack.hpp \
     Entities/Achievement.hpp \
-    Entities/Goal.hpp
-
-unix {
-    target.path = /usr/lib
-    INSTALLS += target
-}
-
-RESOURCES +=
-
-DISTFILES +=
+    Entities/Goal.hpp \
+    Entities/HavingId.hpp

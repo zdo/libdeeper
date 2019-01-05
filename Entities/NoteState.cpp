@@ -14,15 +14,10 @@ QJsonObject NoteState::serializeToJson() const
 
 void NoteState::deserializeFromJson(const QJsonObject &json)
 {
-    m_id = json.value("id").toInt();
+    m_id = json.value("id").toString();
     m_title = json.value("title").toString();
     m_color = json.value("color").toString();
     m_isFinished = json.value("isFinished").toBool();
-}
-
-int NoteState::id() const
-{
-    return m_id;
 }
 
 } // namespace deeper

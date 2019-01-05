@@ -1,5 +1,4 @@
-#include "Tests/SimpleTest.hpp"
+#include "Tests/DeeperTest.hpp"
 
 using namespace deeper;
-
-QTEST_MAIN(SimpleTest)
+QTEST_MAIN(DeeperTest)

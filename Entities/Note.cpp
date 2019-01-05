@@ -9,6 +9,9 @@ QJsonObject Note::serializeToJson() const
     json["title"] = m_title;
     json["text"] = m_text;
 
+    json["parentNodeId"] = m_parentNodeId;
+    json["categoryId"] = m_categoryId;
+
     Q_ASSERT(m_creationTime.isValid());
     json["creationTime"] = double(m_creationTime.toSecsSinceEpoch());
 
@@ -31,12 +34,16 @@ QJsonObject Note::serializeToJson() const
 
 void Note::deserializeFromJson(const QJsonObject &json)
 {
-    m_id = json.value("id").toInt();
+    m_id = json.value("id").toString(InvalidId);
     m_title = json["title"].toString();
     m_text = json["text"].toString();
+
+    m_parentNodeId = json.value("parentNodeId").toString(InvalidId);
+    m_categoryId = json.value("categoryId").toString();
+
     m_creationTime = QDateTime::fromSecsSinceEpoch(qint64(json["creationTime"].toDouble()));
     m_isArchived = json["isArchived"].toBool();
-    m_stateId = json["stateId"].toInt(NoteState::InvalidId);
+    m_stateId = json["stateId"].toString(InvalidId);
     m_tagIdList = Serializable::fromArrayInt(json["tags"].toArray());
 
     double t = json["scheduledTime"].toDouble();

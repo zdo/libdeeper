@@ -9,18 +9,27 @@ StorageLocalJsonFile::StorageLocalJsonFile(const QString &path)
 {
     m_path = path;
 
+    bool initWithDefault = true;
+
     QFile file(m_path);
-    bool ok = file.open(QFile::ReadOnly);
-    if (!ok) {
-        throw StorageException(QObject::tr("Can't open file at path \"%1\"").arg(m_path));
+    if (file.exists()) {
+        file.open(QFile::ReadOnly);
+
+        auto jsonData = file.readAll();
+        auto jsonDoc = QJsonDocument::fromJson(jsonData);
+        m_root = jsonDoc.object();
+        initWithDefault = !(m_root.contains("categoriesTree"));
     }
 
-    auto jsonData = file.readAll();
-    auto jsonDoc = QJsonDocument::fromJson(jsonData);
-    if (jsonDoc.isNull()) {
+    if (initWithDefault) {
         // TODO: Fill with default data.
-    } else {
-        m_root = jsonDoc.object();
+        auto info = AbstractStorage::defaultBaseInfo();
+        m_root["categoriesTree"] = info.categoriesTree;
+        m_root["tags"] = info.tags;
+        m_root["goals"] = info.goals;
+        m_root["noteStates"] = info.noteStates;
+
+        this->saveToFile();
     }
 }
 
@@ -28,7 +37,7 @@ QFuture<StorageBaseInfo> StorageLocalJsonFile::getBaseInfo()
 {
     return QtConcurrent::run([=]() {
         StorageBaseInfo info;
-        info.categories = m_root["categories"].toArray();
+        info.categoriesTree = m_root["categoriesTree"].toArray();
         info.tags = m_root["tags"].toArray();
         info.goals = m_root["goals"].toArray();
         info.noteStates = m_root["noteStates"].toArray();
@@ -40,49 +49,84 @@ QFuture<QVector<QJsonObject> > StorageLocalJsonFile::getNotes(const StorageNotes
 {
 }
 
-void StorageLocalJsonFile::saveCategory(const QJsonObject &json)
+void StorageLocalJsonFile::saveCategoryTree(const QJsonArray &json)
 {
-    this->updateOrAppendBasedOnId("categories", json);
+    m_root["categoriesTree"] = json;
     this->saveToFile();
 }
 
-void StorageLocalJsonFile::deleteCategory(int id)
+void StorageLocalJsonFile::updateOrAppendBasedOnId(const QString &listKey, const QJsonObject &json, const QString &recursiveKey)
 {
-    this->deleteBasedOnId("categories", id);
-    this->saveToFile();
+    QJsonArray list = m_root[listKey].toArray();
+    if (this->updateOrAppendBasedOnId_r(list, json, recursiveKey)) {
+        m_root[listKey] = list;
+    }
 }
 
-void StorageLocalJsonFile::updateOrAppendBasedOnId(const QString &listKey, const QJsonObject &json)
+bool StorageLocalJsonFile::updateOrAppendBasedOnId_r(QJsonArray &list, const QJsonObject &json, const QString &recursiveKey)
 {
     bool found = false;
 
-    QJsonArray list = m_root[listKey].toArray();
     for (auto i = 0; i < list.count(); ++i) {
-        bool same = list[i].toObject()["id"].toInt() == json["id"].toInt();
+        bool same = list[i].toObject()["id"].toString() == json["id"].toString();
         if (same) {
-            found = true;
             list[i] = json;
+            found = true;
             break;
         }
     }
 
-    if (!found) {
-        list.append(json);
+    if (!found && !recursiveKey.isEmpty()) {
+        for (auto i = 0; i < list.count(); ++i) {
+            QJsonObject child = list[i].toObject();
+            QJsonArray superChildList = child[recursiveKey].toArray();
+            found = this->updateOrAppendBasedOnId_r(superChildList, json, recursiveKey);
+            if (found) {
+                child[recursiveKey] = superChildList;
+                list[i] = child;
+                break;
+            }
+        }
     }
-    m_root[listKey] = list;
+
+    return found;
 }
 
-void StorageLocalJsonFile::deleteBasedOnId(const QString &listKey, int id)
+bool StorageLocalJsonFile::deleteBasedOnId_r(QJsonArray &list, const QString &id, const QString &recursiveKey)
 {
-    QJsonArray list = m_root[listKey].toArray();
+    bool found = false;
+
     for (auto i = 0; i < list.count(); ++i) {
-        bool same = list[i].toObject()["id"].toInt() == id;
+        bool same = list[i].toObject()["id"].toString() == id;
         if (same) {
             list.removeAt(i);
+            found = true;
             break;
         }
     }
-    m_root[listKey] = list;
+
+    if (!found && !recursiveKey.isEmpty()) {
+        for (auto i = 0; i < list.count(); ++i) {
+            QJsonObject child = list[i].toObject();
+            QJsonArray superChildList = child[recursiveKey].toArray();
+            found = this->deleteBasedOnId_r(superChildList, id, recursiveKey);
+            if (found) {
+                child[recursiveKey] = superChildList;
+                list[i] = child;
+                break;
+            }
+        }
+    }
+
+    return found;
+}
+
+void StorageLocalJsonFile::deleteBasedOnId(const QString &listKey, const QString &id, const QString &recursiveKey)
+{
+    QJsonArray list = m_root[listKey].toArray();
+    if (this->deleteBasedOnId_r(list, id, recursiveKey)) {
+        m_root[listKey] = list;
+    }
 }
 
 void StorageLocalJsonFile::saveToFile()

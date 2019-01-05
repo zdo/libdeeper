@@ -1,2 +1,11 @@
 .DS_Store
 *.pro.user
+*.o
+Makefile
+*.stash
+*.a
+moc*
+qrc*
+
+libdeeper_test.app/
+target_wrapper.sh

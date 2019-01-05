@@ -2,23 +2,16 @@
 #define CATEGORY_HPP
 
 #include "Serializable.hpp"
+#include "HavingId.hpp"
 #include <QVector>
 
 namespace deeper {
 
-class Category : public Serializable
+class Category : public Serializable, public HavingId
 {
 public:
-    static const int InvalidId = -1;
-
     QJsonObject serializeToJson() const override;
     void deserializeFromJson(const QJsonObject &jsonRaw) override;
-
-    int id() const;
-
-    int parentId() const;
-    void setParentId(int parentId);
-    bool hasParent() const { return m_parentId != InvalidId; }
 
     QString title() const;
     void setTitle(const QString &title);
@@ -26,9 +19,12 @@ public:
     QVector<int> tagIdList() const;
     void setTagIdList(const QVector<int> &tagIdList);
 
+    QVector<QSharedPointer<Category>> children() const;
+    void setChildren(const QVector<QSharedPointer<Category>> &children);
+
 private:
-    int m_id = InvalidId;
-    int m_parentId = InvalidId;
+    QVector<QSharedPointer<Category>> m_children;
+
     QString m_title;
     QVector<int> m_tagIdList;
 };

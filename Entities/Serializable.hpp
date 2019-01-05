@@ -34,6 +34,15 @@ public:
         return result;
     }
 
+    template <typename T>
+    static QJsonArray toArrayPtr(const QVector<T> &src) {
+        QJsonArray result;
+        for (const T &v : src) {
+            result.append(v->serializeToJson());
+        }
+        return result;
+    }
+
     static QVector<int> fromArrayInt(const QJsonArray &src) {
         QVector<int> result;
         for (const QJsonValue &v : src) {
@@ -48,6 +57,17 @@ public:
         for (const QJsonValue &v : src) {
             T t;
             t.deserializeFromJson(v.toObject());
+            result.append(t);
+        }
+        return result;
+    }
+
+    template <typename T>
+    static QVector<QSharedPointer<T>> fromArraySharedPointer(const QJsonArray &src) {
+        QVector<QSharedPointer<T>> result;
+        for (const QJsonValue &v : src) {
+            auto t = QSharedPointer<T>::create();
+            t->deserializeFromJson(v.toObject());
             result.append(t);
         }
         return result;

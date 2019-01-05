@@ -1,0 +1,27 @@
+{
+    "categoriesTree": [
+        {
+            "id": "someid",
+            "title": "Имя категории",
+            "children": [
+                {
+                    "id": "child1",
+                    "title": "Child_1"
+                },
+                {
+                    "id": "child2",
+                    "title": "Child_2"
+                }
+            ],
+            "tags": [
+                1,
+                2
+            ]
+        },
+        {
+            "id": "root2",
+            "title": "Another root"
+        }
+
+    ]
+}

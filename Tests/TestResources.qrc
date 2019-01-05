@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/test">
+        <file>category.json</file>
+        <file>database.json</file>
+    </qresource>
+</RCC>

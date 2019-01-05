@@ -18,9 +18,4 @@ void Tag::deserializeFromJson(const QJsonObject &json)
     m_color = json.value("color").toString();
 }
 
-int Tag::id() const
-{
-    return m_id;
-}
-
 } // namespace deeper

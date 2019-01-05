@@ -7,7 +7,7 @@
 #include "Note.hpp"
 #include "Goal.hpp"
 
-#include "Storage/AbstractStorage.hpp"
+#include "../Storage/AbstractStorage.hpp"
 #include <QSharedPointer>
 
 namespace deeper {
@@ -18,16 +18,23 @@ class Database : public QObject
 
 public:
     Database(const QUrl &url);
+    Database(QSharedPointer<AbstractStorage> storage);
 
-    QVector<QSharedPointer<Category>> rootCategories();
+    void switchAndSaveToStorage(QSharedPointer<AbstractStorage> storage);
+
+    QVector<QSharedPointer<Category>> categoriesTree();
+    QVector<QSharedPointer<Category>> childrenCategoriesOf(int parentId);
     QVector<QSharedPointer<Tag>> tags();
 
-    QSharedPointer<Category> categoryWithId(int id);
-    void saveCategory(const QSharedPointer<Category> &category);
-    void deleteCategory(int id);
+    QSharedPointer<Category> createCategory(const QString &parentId = Category::InvalidId);
+    QSharedPointer<Category> categoryWithId(const QString &id);
+    void saveCategoryTree();
+    QSharedPointer<Category> parentOfCategory(const QSharedPointer<Category> &category);
+    void deleteCategory(const QSharedPointer<Category> &category);
+    void setCategoryParent(const QSharedPointer<Category> &category, const QSharedPointer<Category> &parentCategory, int index = -1);
 
 public slots:
-    void refresh();
+    void refresh(bool sync=false);
 
 signals:
     void onRefresh();
@@ -35,10 +42,12 @@ signals:
 private:
     QSharedPointer<AbstractStorage> m_storage;
 
-    QMap<int, QSharedPointer<Category>> m_categories;
-    QMap<int, QSharedPointer<Tag>> m_tags;
-    QMap<int, QSharedPointer<NoteState>> m_noteStates;
-    QMap<int, QSharedPointer<Goal>> m_goals;
+    QVector<QSharedPointer<Category>> m_categoriesTree;
+    QMap<QString, QSharedPointer<Category>> m_categoryPerId;
+
+    QVector<QSharedPointer<Tag>> m_tags;
+    QVector<QSharedPointer<NoteState>> m_noteStates;
+    QVector<QSharedPointer<Goal>> m_goals;
 };
 
 } // namespace deeper
