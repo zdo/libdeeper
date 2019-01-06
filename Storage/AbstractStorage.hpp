@@ -26,10 +26,12 @@ public:
     virtual ~AbstractStorage();
 
     virtual QFuture<StorageBaseInfo> getBaseInfo() = 0;
+    virtual void clearAllData() = 0;
+
+    virtual void saveCategory(const QJsonObject &json) = 0;
+    virtual void deleteCategory(const QString &id) = 0;
+
     virtual QFuture<QJsonArray> getNotes(const QString &categoryId, const StorageNotesFilter &filter) = 0;
-
-    virtual void saveCategoryTree(const QJsonArray &json) = 0;
-
 protected:
     static StorageBaseInfo defaultBaseInfo();
 };

@@ -10,20 +10,17 @@ class StorageLocalJsonFile : public AbstractStorage
 public:
     StorageLocalJsonFile(const QString &path);
 
+    void clearAllData() override;
+
     QFuture<StorageBaseInfo> getBaseInfo() override;
     QFuture<QJsonArray> getNotes(const QString &categoryId, const StorageNotesFilter &filter) override;
 
-    void saveCategoryTree(const QJsonArray &json) override;
+    void saveCategory(const QJsonObject &json) override;
+    void deleteCategory(const QString &id) override;
 
 private:
     QString m_path;
     QJsonObject m_root;
-
-    void updateOrAppendBasedOnId(const QString &listKey, const QJsonObject &json, const QString &recursiveKey = "");
-    bool updateOrAppendBasedOnId_r(QJsonArray &list, const QJsonObject &json, const QString &recursiveKey = "");
-
-    void deleteBasedOnId(const QString &listKey, const QString &id, const QString &recursiveKey = "");
-    bool deleteBasedOnId_r(QJsonArray &list, const QString &id, const QString &recursiveKey = "");
 
     void saveToFile();
 };

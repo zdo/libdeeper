@@ -33,6 +33,15 @@ StorageLocalJsonFile::StorageLocalJsonFile(const QString &path)
     }
 }
 
+void StorageLocalJsonFile::clearAllData()
+{
+    m_root["categories"] = QJsonArray();
+    m_root["tags"] = QJsonArray();
+    m_root["goals"] = QJsonArray();
+    m_root["noteStates"] = QJsonArray();
+    this->saveToFile();
+}
+
 QFuture<StorageBaseInfo> StorageLocalJsonFile::getBaseInfo()
 {
     return QtConcurrent::run([=]() {
@@ -50,84 +59,43 @@ QFuture<QJsonArray> StorageLocalJsonFile::getNotes(const QString &categoryId, co
 
 }
 
-void StorageLocalJsonFile::saveCategoryTree(const QJsonArray &json)
+void StorageLocalJsonFile::saveCategory(const QJsonObject &json)
 {
-    m_root["categoriesTree"] = json;
+    bool found = false;
+
+    QJsonArray categoriesJson = m_root["categories"].toArray();
+    for (int i = 0; i < categoriesJson.count(); ++i) {
+        auto categoryJsonRaw = categoriesJson[i];
+        auto categoryJson = categoryJsonRaw.toObject();
+        if (categoryJson["id"].toString() == json["id"].toString()) {
+            found = true;
+            categoriesJson[i] = json;
+            break;
+        }
+    }
+
+    if (!found) {
+        categoriesJson.append(json);
+    }
+
+    m_root["categories"] = categoriesJson;
     this->saveToFile();
 }
 
-void StorageLocalJsonFile::updateOrAppendBasedOnId(const QString &listKey, const QJsonObject &json, const QString &recursiveKey)
+void StorageLocalJsonFile::deleteCategory(const QString &id)
 {
-    QJsonArray list = m_root[listKey].toArray();
-    if (this->updateOrAppendBasedOnId_r(list, json, recursiveKey)) {
-        m_root[listKey] = list;
-    }
-}
-
-bool StorageLocalJsonFile::updateOrAppendBasedOnId_r(QJsonArray &list, const QJsonObject &json, const QString &recursiveKey)
-{
-    bool found = false;
-
-    for (auto i = 0; i < list.count(); ++i) {
-        bool same = list[i].toObject()["id"].toString() == json["id"].toString();
-        if (same) {
-            list[i] = json;
-            found = true;
+    QJsonArray categoriesJson = m_root["categories"].toArray();
+    for (int i = 0; i < categoriesJson.count(); ++i) {
+        auto categoryJsonRaw = categoriesJson[i];
+        auto categoryJson = categoryJsonRaw.toObject();
+        if (categoryJson["id"].toString() == id) {
+            categoriesJson.removeAt(i);
             break;
         }
     }
 
-    if (!found && !recursiveKey.isEmpty()) {
-        for (auto i = 0; i < list.count(); ++i) {
-            QJsonObject child = list[i].toObject();
-            QJsonArray superChildList = child[recursiveKey].toArray();
-            found = this->updateOrAppendBasedOnId_r(superChildList, json, recursiveKey);
-            if (found) {
-                child[recursiveKey] = superChildList;
-                list[i] = child;
-                break;
-            }
-        }
-    }
-
-    return found;
-}
-
-bool StorageLocalJsonFile::deleteBasedOnId_r(QJsonArray &list, const QString &id, const QString &recursiveKey)
-{
-    bool found = false;
-
-    for (auto i = 0; i < list.count(); ++i) {
-        bool same = list[i].toObject()["id"].toString() == id;
-        if (same) {
-            list.removeAt(i);
-            found = true;
-            break;
-        }
-    }
-
-    if (!found && !recursiveKey.isEmpty()) {
-        for (auto i = 0; i < list.count(); ++i) {
-            QJsonObject child = list[i].toObject();
-            QJsonArray superChildList = child[recursiveKey].toArray();
-            found = this->deleteBasedOnId_r(superChildList, id, recursiveKey);
-            if (found) {
-                child[recursiveKey] = superChildList;
-                list[i] = child;
-                break;
-            }
-        }
-    }
-
-    return found;
-}
-
-void StorageLocalJsonFile::deleteBasedOnId(const QString &listKey, const QString &id, const QString &recursiveKey)
-{
-    QJsonArray list = m_root[listKey].toArray();
-    if (this->deleteBasedOnId_r(list, id, recursiveKey)) {
-        m_root[listKey] = list;
-    }
+    m_root["categories"] = categoriesJson;
+    this->saveToFile();
 }
 
 void StorageLocalJsonFile::saveToFile()

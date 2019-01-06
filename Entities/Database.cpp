@@ -28,9 +28,15 @@ Database::Database(QSharedPointer<AbstractStorage> storage)
     Q_ASSERT(m_storage != nullptr);
 }
 
-void Database::switchAndSaveToStorage(QSharedPointer<AbstractStorage> storage)
+void Database::switchAndOverwriteStorage(QSharedPointer<AbstractStorage> storage)
 {
     m_storage = storage;
+
+    m_storage->clearAllData();
+
+    for (auto c : m_categoryPerId) {
+        this->saveCategory(c);
+    }
 }
 
 QVector<QSharedPointer<Category>> Database::rootCategories()
@@ -61,6 +67,7 @@ void Database::deleteCategory(const QSharedPointer<Category> &category)
 {
     HavingParent::remove(m_categoryPerId, category);
     m_categoryPerId.remove(category->id());
+    m_storage->deleteCategory(category->id());
 }
 
 QVector<QSharedPointer<Tag>> Database::tags()
@@ -80,7 +87,15 @@ QSharedPointer<Category> Database::createCategory(const QSharedPointer<Category>
 
     m_categoryPerId[newCategory->id()] = newCategory;
     HavingParent::insert(m_categoryPerId, newCategory, parent, -1);
+
+    this->saveCategory(newCategory);
+
     return newCategory;
+}
+
+void Database::saveCategory(const QSharedPointer<Category> &category)
+{
+    m_storage->saveCategory(category->serializeToJson());
 }
 
 void Database::refresh(bool sync)
@@ -117,7 +132,18 @@ bool Database::setCategoryParent(const QSharedPointer<Category> &category,
                                  const QSharedPointer<Category> &parentCategory,
                                  int index)
 {
-    return HavingParent::insert(m_categoryPerId, category, parentCategory, index);
+    auto oldParent = this->parentOfCategory(category);
+    bool v = HavingParent::insert(m_categoryPerId, category, parentCategory, index);
+
+    this->saveCategory(category);
+    for (auto oldSibling : this->childrenOfCategory(oldParent)) {
+        this->saveCategory(oldSibling);
+    }
+    for (auto newSibling : this->childrenOfCategory(parentCategory)) {
+        this->saveCategory(newSibling);
+    }
+
+    return v;
 }
 
 } // namespace deeper

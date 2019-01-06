@@ -10,7 +10,6 @@ public:
     static const QString InvalidId;
 
     const QString & id() const { return m_id; }
-
     void generateRandomId();
 
 protected:

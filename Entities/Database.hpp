@@ -21,7 +21,7 @@ public:
     Database(QSharedPointer<AbstractStorage> storage);
 
     // Storage.
-    void switchAndSaveToStorage(QSharedPointer<AbstractStorage> storage);
+    void switchAndOverwriteStorage(QSharedPointer<AbstractStorage> storage);
 
     // Tags.
     QVector<QSharedPointer<Tag>> tags();
@@ -33,6 +33,7 @@ public:
     QVector<QSharedPointer<Category>> childrenOfCategory(const QSharedPointer<Category> &category);
 
     QSharedPointer<Category> createCategory(const QSharedPointer<Category> &parent = nullptr);
+    void saveCategory(const QSharedPointer<Category> &category);
     void deleteCategory(const QSharedPointer<Category> &category);
     bool setCategoryParent(const QSharedPointer<Category> &category, const QSharedPointer<Category> &parentCategory, int index = -1);
 

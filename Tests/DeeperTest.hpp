@@ -43,7 +43,7 @@ private slots:
         m_database->refresh(true);
 
         auto writableStorage = QSharedPointer<StorageLocalJsonFile>::create(m_jsonTmpPath);
-        m_database->switchAndSaveToStorage(writableStorage);
+        m_database->switchAndOverwriteStorage(writableStorage);
     }
 
     void categoryDeserialize()

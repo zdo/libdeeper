@@ -30,6 +30,7 @@ QString Category::title() const
 void Category::setTitle(const QString &title)
 {
     m_title = title;
+
 }
 
 QVector<QString> Category::tagIdList() const
