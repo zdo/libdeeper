@@ -38,7 +38,14 @@ public:
     bool setCategoryParent(const QSharedPointer<Category> &category, const QSharedPointer<Category> &parentCategory, int index = -1);
 
     // Notes.
-    QFuture<QVector<QSharedPointer<Note>>> notesForCategory(const QSharedPointer<Category> &category);
+    QFuture<QVector<QSharedPointer<Note>>> notes(const QSharedPointer<Category> &category,
+                                                 const QSharedPointer<Note> &parentNote = nullptr);
+    QSharedPointer<Note> createNote(const QSharedPointer<Category> &category,
+                                    const QSharedPointer<Note> &parentNote = nullptr);
+    void saveNote(const QSharedPointer<Note> &note);
+    void deleteNote(const QSharedPointer<Note> &note);
+    bool setNoteParent(const QSharedPointer<Note> &note, const QSharedPointer<Category> &category,
+                       const QSharedPointer<Note> &parentNote, int index = -1);
 
 public slots:
     void refresh(bool sync=false);
@@ -53,6 +60,9 @@ private:
     QVector<QSharedPointer<Tag>> m_tags;
     QVector<QSharedPointer<NoteState>> m_noteStates;
     QVector<QSharedPointer<Goal>> m_goals;
+
+    QMap<QString, bool> m_categoryNoteGot;
+    QMap<QString, QSharedPointer<Note>> m_notePerId;
 };
 
 } // namespace deeper

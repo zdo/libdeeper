@@ -1,9 +1,28 @@
 #include "StorageLocalJsonFile.hpp"
 #include <QFile>
 #include <QJsonDocument>
-#include <QtConcurrent>
 
 namespace deeper {
+
+static QJsonObject ArrayToObjectWithIdentifiableObjects(const QJsonArray &array)
+{
+    QJsonObject result;
+    for (auto raw : array) {
+        QJsonObject o = raw.toObject();
+        result[o["id"].toString()] = o;
+    }
+    return result;
+}
+
+static QJsonArray ObjectToArrayWithIdentifiableObjects(const QJsonObject &obj)
+{
+    QJsonArray result;
+    for (auto key : obj.keys()) {
+        QJsonObject o = obj[key].toObject();
+        result.append(o);
+    }
+    return result;
+}
 
 StorageLocalJsonFile::StorageLocalJsonFile(const QString &path)
 {
@@ -22,12 +41,15 @@ StorageLocalJsonFile::StorageLocalJsonFile(const QString &path)
     }
 
     if (initWithDefault) {
-        // TODO: Fill with default data.
+        this->clearAllData();
+
         auto info = AbstractStorage::defaultBaseInfo();
-        m_root["categories"] = info.categories;
-        m_root["tags"] = info.tags;
-        m_root["goals"] = info.goals;
-        m_root["noteStates"] = info.noteStates;
+
+        m_root["categories"] = ArrayToObjectWithIdentifiableObjects(info.categories);
+        m_root["tags"] = ArrayToObjectWithIdentifiableObjects(info.tags);
+        m_root["goals"] = ArrayToObjectWithIdentifiableObjects(info.goals);
+        m_root["noteStates"] = ArrayToObjectWithIdentifiableObjects(info.noteStates);
+        m_root["notes"] = QJsonObject();
 
         this->saveToFile();
     }
@@ -35,67 +57,67 @@ StorageLocalJsonFile::StorageLocalJsonFile(const QString &path)
 
 void StorageLocalJsonFile::clearAllData()
 {
-    m_root["categories"] = QJsonArray();
-    m_root["tags"] = QJsonArray();
-    m_root["goals"] = QJsonArray();
-    m_root["noteStates"] = QJsonArray();
+    m_root["categories"] = QJsonObject();
+    m_root["tags"] = QJsonObject();
+    m_root["goals"] = QJsonObject();
+    m_root["noteStates"] = QJsonObject();
+    m_root["notes"] = QJsonObject();
+
     this->saveToFile();
 }
 
-QFuture<StorageBaseInfo> StorageLocalJsonFile::getBaseInfo()
+StorageBaseInfo StorageLocalJsonFile::getBaseInfo()
 {
-    return QtConcurrent::run([=]() {
-        StorageBaseInfo info;
-        info.categories = m_root["categories"].toArray();
-        info.tags = m_root["tags"].toArray();
-        info.goals = m_root["goals"].toArray();
-        info.noteStates = m_root["noteStates"].toArray();
-        return info;
-    });
+    StorageBaseInfo info;
+    info.categories = ObjectToArrayWithIdentifiableObjects(m_root["categories"].toObject());
+    info.tags = ObjectToArrayWithIdentifiableObjects(m_root["tags"].toObject());
+    info.goals = ObjectToArrayWithIdentifiableObjects(m_root["goals"].toObject());
+    info.noteStates = ObjectToArrayWithIdentifiableObjects(m_root["noteStates"].toObject());
+    return info;
 }
 
-QFuture<QJsonArray> StorageLocalJsonFile::getNotes(const QString &categoryId, const StorageNotesFilter &filter)
+void StorageLocalJsonFile::saveNote(const QJsonObject &json)
 {
+    QJsonObject obj = m_root["notes"].toObject();
+    obj[json["id"].toString()] = json;
+    m_root["notes"] = obj;
+    this->saveToFile();
+}
 
+void StorageLocalJsonFile::deleteNote(const QString &id)
+{
+    QJsonObject obj = m_root["notes"].toObject();
+    obj.remove(id);
+    m_root["notes"] = obj;
+    this->saveToFile();
 }
 
 void StorageLocalJsonFile::saveCategory(const QJsonObject &json)
 {
-    bool found = false;
-
-    QJsonArray categoriesJson = m_root["categories"].toArray();
-    for (int i = 0; i < categoriesJson.count(); ++i) {
-        auto categoryJsonRaw = categoriesJson[i];
-        auto categoryJson = categoryJsonRaw.toObject();
-        if (categoryJson["id"].toString() == json["id"].toString()) {
-            found = true;
-            categoriesJson[i] = json;
-            break;
-        }
-    }
-
-    if (!found) {
-        categoriesJson.append(json);
-    }
-
-    m_root["categories"] = categoriesJson;
+    QJsonObject obj = m_root["categories"].toObject();
+    obj[json["id"].toString()] = json;
+    m_root["categories"] = obj;
     this->saveToFile();
 }
 
 void StorageLocalJsonFile::deleteCategory(const QString &id)
 {
-    QJsonArray categoriesJson = m_root["categories"].toArray();
-    for (int i = 0; i < categoriesJson.count(); ++i) {
-        auto categoryJsonRaw = categoriesJson[i];
-        auto categoryJson = categoryJsonRaw.toObject();
-        if (categoryJson["id"].toString() == id) {
-            categoriesJson.removeAt(i);
-            break;
+    QJsonObject obj = m_root["categories"].toObject();
+    obj.remove(id);
+    m_root["categories"] = obj;
+    this->saveToFile();
+}
+
+QJsonArray StorageLocalJsonFile::notes(const QString &categoryId, const QString &parentNoteId)
+{
+    QJsonArray notesResult;
+    for (auto noteRaw : m_root["notes"].toArray()) {
+        auto note = noteRaw.toObject();
+        if (note["parentId"].toString() == parentNoteId && note["categoryId"].toString() == categoryId) {
+            notesResult.append(note);
         }
     }
-
-    m_root["categories"] = categoriesJson;
-    this->saveToFile();
+    return notesResult;
 }
 
 void StorageLocalJsonFile::saveToFile()

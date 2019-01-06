@@ -20,18 +20,23 @@ struct StorageNotesFilter {
     QJsonArray tagIds;
 };
 
+// Storage SHOULD NOT use QFuture<> for any operation.
+// If the operation will be blocked - it's ok.
+// Database class is responsible for an async processing.
 class AbstractStorage
 {
 public:
     virtual ~AbstractStorage();
 
-    virtual QFuture<StorageBaseInfo> getBaseInfo() = 0;
+    virtual StorageBaseInfo getBaseInfo() = 0;
     virtual void clearAllData() = 0;
 
     virtual void saveCategory(const QJsonObject &json) = 0;
     virtual void deleteCategory(const QString &id) = 0;
 
-    virtual QFuture<QJsonArray> getNotes(const QString &categoryId, const StorageNotesFilter &filter) = 0;
+    virtual QJsonArray notes(const QString &categoryId, const QString &parentNoteId) = 0;
+    virtual void saveNote(const QJsonObject &json) = 0;
+    virtual void deleteNote(const QString &id) = 0;
 protected:
     static StorageBaseInfo defaultBaseInfo();
 };

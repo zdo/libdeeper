@@ -158,6 +158,33 @@ private slots:
         QCOMPARE(m_database->rootCategories()[0]->id(), "root2");
     }
 
+    void notesTest1()
+    {
+        this->reloadDatabaseToInitialState();
+
+        auto root = m_database->categoryWithId("someid");
+        auto child1 = m_database->categoryWithId("child1");
+        auto child2 = m_database->categoryWithId("child2");
+        auto root2 = m_database->categoryWithId("root2");
+
+        auto note1 = m_database->createNote(root);
+        note1->setTitle("Note1");
+        m_database->saveNote(note1);
+
+        auto notes = m_database->notes(root).result();
+        QCOMPARE(notes.count(), 1);
+        QCOMPARE(notes[0]->title(), "Note1");
+
+
+        auto note2 = m_database->createNote(root);
+        note2->setTitle("Note2");
+        m_database->saveNote(note2);
+
+        notes = m_database->notes(root).result();
+        QCOMPARE(notes.count(), 2);
+        QCOMPARE(notes[1]->title(), "Note2");
+    }
+
     void cleanupTestCase()
     {
         QFile::remove(m_jsonTmpPath);
