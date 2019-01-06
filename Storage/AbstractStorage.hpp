@@ -10,7 +10,7 @@
 namespace deeper {
 
 struct StorageBaseInfo {
-    QJsonArray categoriesTree;
+    QJsonArray categories;
     QJsonArray tags;
     QJsonArray noteStates;
     QJsonArray goals;
@@ -26,7 +26,7 @@ public:
     virtual ~AbstractStorage();
 
     virtual QFuture<StorageBaseInfo> getBaseInfo() = 0;
-    virtual QFuture<QVector<QJsonObject>> getNotes(const StorageNotesFilter &filter) = 0;
+    virtual QFuture<QJsonArray> getNotes(const QString &categoryId, const StorageNotesFilter &filter) = 0;
 
     virtual void saveCategoryTree(const QJsonArray &json) = 0;
 

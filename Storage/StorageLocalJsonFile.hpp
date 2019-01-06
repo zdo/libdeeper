@@ -11,7 +11,7 @@ public:
     StorageLocalJsonFile(const QString &path);
 
     QFuture<StorageBaseInfo> getBaseInfo() override;
-    QFuture<QVector<QJsonObject>> getNotes(const StorageNotesFilter &filter) override;
+    QFuture<QJsonArray> getNotes(const QString &categoryId, const StorageNotesFilter &filter) override;
 
     void saveCategoryTree(const QJsonArray &json) override;
 

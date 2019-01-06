@@ -69,7 +69,9 @@ SOURCES += \
     Entities/TimeTrack.cpp \
     Entities/Achievement.cpp \
     Entities/Goal.cpp \
-    Entities/HavingId.cpp
+    Entities/HavingId.cpp \
+    Entities/DatabaseStuff/CategoryManager.cpp \
+    Entities/HavingParent.cpp
 
 HEADERS += \
         libdeeper.hpp \
@@ -87,4 +89,6 @@ HEADERS += \
     Entities/TimeTrack.hpp \
     Entities/Achievement.hpp \
     Entities/Goal.hpp \
-    Entities/HavingId.hpp
+    Entities/HavingId.hpp \
+    Entities/DatabaseStuff/CategoryManager.hpp \
+    Entities/HavingParent.hpp

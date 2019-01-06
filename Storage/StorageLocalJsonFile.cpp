@@ -18,13 +18,13 @@ StorageLocalJsonFile::StorageLocalJsonFile(const QString &path)
         auto jsonData = file.readAll();
         auto jsonDoc = QJsonDocument::fromJson(jsonData);
         m_root = jsonDoc.object();
-        initWithDefault = !(m_root.contains("categoriesTree"));
+        initWithDefault = !(m_root.contains("categories"));
     }
 
     if (initWithDefault) {
         // TODO: Fill with default data.
         auto info = AbstractStorage::defaultBaseInfo();
-        m_root["categoriesTree"] = info.categoriesTree;
+        m_root["categories"] = info.categories;
         m_root["tags"] = info.tags;
         m_root["goals"] = info.goals;
         m_root["noteStates"] = info.noteStates;
@@ -37,7 +37,7 @@ QFuture<StorageBaseInfo> StorageLocalJsonFile::getBaseInfo()
 {
     return QtConcurrent::run([=]() {
         StorageBaseInfo info;
-        info.categoriesTree = m_root["categoriesTree"].toArray();
+        info.categories = m_root["categories"].toArray();
         info.tags = m_root["tags"].toArray();
         info.goals = m_root["goals"].toArray();
         info.noteStates = m_root["noteStates"].toArray();
@@ -45,8 +45,9 @@ QFuture<StorageBaseInfo> StorageLocalJsonFile::getBaseInfo()
     });
 }
 
-QFuture<QVector<QJsonObject> > StorageLocalJsonFile::getNotes(const StorageNotesFilter &filter)
+QFuture<QJsonArray> StorageLocalJsonFile::getNotes(const QString &categoryId, const StorageNotesFilter &filter)
 {
+
 }
 
 void StorageLocalJsonFile::saveCategoryTree(const QJsonArray &json)

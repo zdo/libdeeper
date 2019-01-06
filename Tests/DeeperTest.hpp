@@ -55,9 +55,9 @@ private slots:
 
         QCOMPARE(category.id(), "someid");
         QCOMPARE(category.title(), u8"Имя категории");
-        QCOMPARE(category.children().count(), 2);
-        QCOMPARE(category.children()[1]->title(), u8"Child_2");
-        QCOMPARE(category.tagIdList()[1], 2);
+        QCOMPARE(category.parentId(), "someparent");
+        QCOMPARE(category.orderIndex(), 100500);
+        QCOMPARE(category.tagIdList()[1], "2");
     }
 
     void categorySerialize()
@@ -84,7 +84,7 @@ private slots:
 
     void databaseBasicCheck()
     {
-        QCOMPARE(m_database->categoriesTree().count(), 2);
+        QCOMPARE(m_database->rootCategories().count(), 2);
         QVERIFY(m_database->categoryWithId("someid") != nullptr);
         QVERIFY(m_database->categoryWithId("child1") != nullptr);
         QVERIFY(m_database->categoryWithId("child2") != nullptr);
@@ -93,8 +93,14 @@ private slots:
     void databaseCheckParent()
     {
         auto root = m_database->categoryWithId("someid");
+        auto child1 = m_database->categoryWithId("child1");
         auto child2 = m_database->categoryWithId("child2");
+        auto root2 = m_database->categoryWithId("root2");
+
+        QVERIFY(m_database->parentOfCategory(child1) == root);
         QVERIFY(m_database->parentOfCategory(child2) == root);
+        QVERIFY(m_database->parentOfCategory(root) == nullptr);
+        QVERIFY(m_database->parentOfCategory(root2) == nullptr);
     }
 
     void databaseParentChanging()
@@ -105,14 +111,17 @@ private slots:
         auto root2 = m_database->categoryWithId("root2");
 
         m_database->setCategoryParent(child2, child1);
-        QCOMPARE(m_database->parentOfCategory(child2), child1);
+        QVERIFY(m_database->parentOfCategory(child1) == root);
+        QVERIFY(m_database->parentOfCategory(child2) == child1);
+        QVERIFY(m_database->parentOfCategory(root) == nullptr);
+        QVERIFY(m_database->parentOfCategory(root2) == nullptr);
 
         m_database->setCategoryParent(root2, root, 0);
-        QCOMPARE(m_database->categoriesTree().count(), 1);
-        QCOMPARE(m_database->categoriesTree()[0]->id(), "someid");
-        QCOMPARE(root->children().count(), 2);
-        QCOMPARE(root->children()[0]->id(), "root2");
-        QCOMPARE(root->children()[1]->id(), "child1");
+        QCOMPARE(m_database->rootCategories().count(), 1);
+        QCOMPARE(m_database->rootCategories()[0]->id(), "someid");
+        QCOMPARE(m_database->childrenOfCategory(root).count(), 2);
+        QCOMPARE(m_database->childrenOfCategory(root)[0]->id(), "root2");
+        QCOMPARE(m_database->childrenOfCategory(root)[1]->id(), "child1");
     }
 
     void databaseParentChangingClampingRegressive()
@@ -125,14 +134,14 @@ private slots:
         auto root2 = m_database->categoryWithId("root2");
 
         m_database->setCategoryParent(root2, nullptr, 100500); // too big index offset
-        QCOMPARE(m_database->categoriesTree().count(), 2);
-        QCOMPARE(m_database->categoriesTree()[0]->id(), "someid");
-        QCOMPARE(m_database->categoriesTree()[1]->id(), "root2");
+        QCOMPARE(m_database->rootCategories().count(), 2);
+        QCOMPARE(m_database->rootCategories()[0]->id(), "someid");
+        QCOMPARE(m_database->rootCategories()[1]->id(), "root2");
 
         m_database->setCategoryParent(root, nullptr, -100500); // too small index offset
-        QCOMPARE(m_database->categoriesTree().count(), 2);
-        QCOMPARE(m_database->categoriesTree()[0]->id(), "root2");
-        QCOMPARE(m_database->categoriesTree()[1]->id(), "someid");
+        QCOMPARE(m_database->rootCategories().count(), 2);
+        QCOMPARE(m_database->rootCategories()[0]->id(), "root2");
+        QCOMPARE(m_database->rootCategories()[1]->id(), "someid");
     }
 
     void databaseDeleteCategoryRegressive()
@@ -145,8 +154,8 @@ private slots:
         auto root2 = m_database->categoryWithId("root2");
 
         m_database->deleteCategory(root);
-        QCOMPARE(m_database->categoriesTree().count(), 1);
-        QCOMPARE(m_database->categoriesTree()[0]->id(), "root2");
+        QCOMPARE(m_database->rootCategories().count(), 1);
+        QCOMPARE(m_database->rootCategories()[0]->id(), "root2");
     }
 
     void cleanupTestCase()

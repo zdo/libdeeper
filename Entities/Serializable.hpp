@@ -51,6 +51,14 @@ public:
         return result;
     }
 
+    static QVector<QString> fromArrayString(const QJsonArray &src) {
+        QVector<QString> result;
+        for (const QJsonValue &v : src) {
+            result.append(v.toString());
+        }
+        return result;
+    }
+
     template <typename T>
     static QVector<T> fromArray(const QJsonArray &src) {
         QVector<T> result;

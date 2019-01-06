@@ -6,7 +6,8 @@ QJsonObject Category::serializeToJson() const
 {
     QJsonObject json;
     json["id"] = m_id;
-    json["children"] = Serializable::toArrayPtr(m_children);
+    json["parentId"] = m_parentId;
+    json["orderIndex"] = m_orderIndex;
     json["title"] = m_title;
     json["tags"] = Serializable::toArraySimple(m_tagIdList);
     return json;
@@ -15,9 +16,10 @@ QJsonObject Category::serializeToJson() const
 void Category::deserializeFromJson(const QJsonObject &json)
 {
     m_id = json["id"].toString(InvalidId);
-    m_children = Serializable::fromArraySharedPointer<Category>(json["children"].toArray());
+    m_parentId = json["parentId"].toString(InvalidId);
+    m_orderIndex = json["orderIndex"].toInt();
     m_title = json["title"].toString();
-    m_tagIdList = Serializable::fromArrayInt(json["tags"].toArray());
+    m_tagIdList = Serializable::fromArrayString(json["tags"].toArray());
 }
 
 QString Category::title() const
@@ -30,24 +32,14 @@ void Category::setTitle(const QString &title)
     m_title = title;
 }
 
-QVector<int> Category::tagIdList() const
+QVector<QString> Category::tagIdList() const
 {
     return m_tagIdList;
 }
 
-void Category::setTagIdList(const QVector<int> &tagIdList)
+void Category::setTagIdList(const QVector<QString> &tagIdList)
 {
     m_tagIdList = tagIdList;
-}
-
-QVector<QSharedPointer<Category> > Category::children() const
-{
-    return m_children;
-}
-
-void Category::setChildren(const QVector<QSharedPointer<Category> > &children)
-{
-    m_children = children;
 }
 
 } // namespace deeper

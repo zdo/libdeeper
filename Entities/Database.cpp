@@ -31,12 +31,11 @@ Database::Database(QSharedPointer<AbstractStorage> storage)
 void Database::switchAndSaveToStorage(QSharedPointer<AbstractStorage> storage)
 {
     m_storage = storage;
-    this->saveCategoryTree();
 }
 
-QVector<QSharedPointer<Category>> Database::categoriesTree()
+QVector<QSharedPointer<Category>> Database::rootCategories()
 {
-    return m_categoriesTree;
+    return HavingParent::children(m_categoryPerId, QSharedPointer<Category>());
 }
 
 QSharedPointer<Category> Database::categoryWithId(const QString &id)
@@ -44,52 +43,24 @@ QSharedPointer<Category> Database::categoryWithId(const QString &id)
     return m_categoryPerId.value(id);
 }
 
-void Database::saveCategoryTree()
-{
-    m_storage->saveCategoryTree(Serializable::toArrayPtr(m_categoriesTree));
-}
-
 QSharedPointer<Category> Database::parentOfCategory(const QSharedPointer<Category> &category)
 {
-    QSharedPointer<Category> parent;
+    if (category->hasParent()) {
+        return this->categoryWithId(category->parentId());
+    } else {
+        return nullptr;
+    }
+}
 
-    std::function<void (QSharedPointer<Category> currentParent, QVector<QSharedPointer<Category>> categories)> fn =
-            [&](QSharedPointer<Category> currentParent, QVector<QSharedPointer<Category>> categories) {
-        bool found = false;
-        for (auto c : categories) {
-            if (c->id() == category->id()) {
-                parent = currentParent;
-                found = true;
-                break;
-            }
-        }
-
-        if (!found) {
-            for (auto c : categories) {
-                fn(c, c->children());
-            }
-        }
-    };
-
-    fn(nullptr, m_categoriesTree);
-
-    return parent;
+QVector<QSharedPointer<Category> > Database::childrenOfCategory(const QSharedPointer<Category> &category)
+{
+    return HavingParent::children(m_categoryPerId, category);
 }
 
 void Database::deleteCategory(const QSharedPointer<Category> &category)
 {
-    auto parentCategory = this->parentOfCategory(category);
-
-    if (parentCategory.isNull()) {
-        m_categoriesTree.removeOne(category);
-    } else {
-        auto children = parentCategory->children();
-        children.removeOne(category);
-        parentCategory->setChildren(children);
-    }
-
+    HavingParent::remove(m_categoryPerId, category);
     m_categoryPerId.remove(category->id());
-    this->saveCategoryTree();
 }
 
 QVector<QSharedPointer<Tag>> Database::tags()
@@ -101,42 +72,26 @@ QVector<QSharedPointer<Tag>> Database::tags()
     return result;
 }
 
-QSharedPointer<Category> Database::createCategory(const QString &parentId)
+QSharedPointer<Category> Database::createCategory(const QSharedPointer<Category> &parent)
 {
-    auto parentCategory = m_categoryPerId.value(parentId);
-    if (parentCategory.isNull()) {
-        qCritical() << "Try to create category with invalid parent id" << parentId;
-        return nullptr;
-    }
-
     auto newCategory = QSharedPointer<Category>::create();
     newCategory->generateRandomId();
     newCategory->setTitle(QObject::tr("New category"));
+
     m_categoryPerId[newCategory->id()] = newCategory;
-
-    auto children = parentCategory->children();
-    children.append(newCategory);
-    parentCategory->setChildren(children);
-
-    this->saveCategoryTree();
-
+    HavingParent::insert(m_categoryPerId, newCategory, parent, -1);
     return newCategory;
 }
 
 void Database::refresh(bool sync)
 {
     auto fn = [=](StorageBaseInfo baseInfo) {
-        m_categoriesTree = fromArrayToSharedPointers<Category>(baseInfo.categoriesTree);
+        auto categories = fromArrayToSharedPointers<Category>(baseInfo.categories);
 
         m_categoryPerId.clear();
-        std::function<void (QVector<QSharedPointer<Category>>)> registerCategoriesFn = [&](QVector<QSharedPointer<Category>> list) {
-            for (auto c : list) {
-                m_categoryPerId[c->id()] = c;
-
-                registerCategoriesFn(c->children());
-            }
-        };
-        registerCategoriesFn(m_categoriesTree);
+        for (auto c : categories) {
+            m_categoryPerId[c->id()] = c;
+        }
 
         m_tags = fromArrayToSharedPointers<Tag>(baseInfo.tags);
         m_noteStates = fromArrayToSharedPointers<NoteState>(baseInfo.noteStates);
@@ -162,44 +117,7 @@ bool Database::setCategoryParent(const QSharedPointer<Category> &category,
                                  const QSharedPointer<Category> &parentCategory,
                                  int index)
 {
-    auto superParent = parentCategory;
-    while (!superParent.isNull()) {
-        if (superParent->id() == category->id()) {
-            // Can't move category to its child.
-            return false;
-        }
-        superParent = this->parentOfCategory(superParent);
-    }
-
-    // Remove from the parent.
-    auto oldParentCategory = this->parentOfCategory(category);
-    if (oldParentCategory.isNull()) {
-        m_categoriesTree.removeOne(category);
-    } else {
-        auto children = oldParentCategory->children();
-        children.removeOne(category);
-        oldParentCategory->setChildren(children);
-    }
-
-    // Add to new parent.
-    if (parentCategory) {
-        auto children = parentCategory->children();
-        if (index < 0) {
-            index = children.size();
-        }
-        index = qBound(0, index, children.count());
-        children.insert(index, category);
-        parentCategory->setChildren(children);
-    } else {
-        if (index < 0) {
-            index = m_categoriesTree.size();
-        }
-        index = qBound(0, index, m_categoriesTree.count());
-        m_categoriesTree.insert(index, category);
-    }
-
-    this->saveCategoryTree();
-    return true;
+    return HavingParent::insert(m_categoryPerId, category, parentCategory, index);
 }
 
 } // namespace deeper
