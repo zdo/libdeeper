@@ -33,6 +33,7 @@ private:
 private slots:
     void initTestCase()
     {
+        qDebug() << "Path to temporary JSON file" << m_jsonTmpPath;
         this->reloadDatabaseToInitialState();
     }
 
@@ -158,7 +159,7 @@ private slots:
         QCOMPARE(m_database->rootCategories()[0]->id(), "root2");
     }
 
-    void notesTest1()
+    void basicNotesOperations()
     {
         this->reloadDatabaseToInitialState();
 
@@ -171,7 +172,7 @@ private slots:
         note1->setTitle("Note1");
         m_database->saveNote(note1);
 
-        auto notes = m_database->notes(root).result();
+        auto notes = m_database->notesSync(root);
         QCOMPARE(notes.count(), 1);
         QCOMPARE(notes[0]->title(), "Note1");
 
@@ -180,8 +181,22 @@ private slots:
         note2->setTitle("Note2");
         m_database->saveNote(note2);
 
-        notes = m_database->notes(root).result();
+        notes = m_database->notesSync(root);
         QCOMPARE(notes.count(), 2);
+        QCOMPARE(notes[0]->title(), "Note1");
+        QCOMPARE(notes[1]->title(), "Note2");
+    }
+
+    void readNotesFromFile()
+    {
+        auto writableStorage = QSharedPointer<StorageLocalJsonFile>::create(m_jsonTmpPath);
+        auto database = QSharedPointer<Database>::create(writableStorage);
+        database->refresh(true);
+
+        auto root = database->categoryWithId("someid");
+        auto notes = database->notesSync(root);
+        QCOMPARE(notes.count(), 2);
+        QCOMPARE(notes[0]->title(), "Note1");
         QCOMPARE(notes[1]->title(), "Note2");
     }
 

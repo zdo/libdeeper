@@ -126,6 +126,38 @@ void Database::refresh(bool sync)
     }
 }
 
+QVector<QSharedPointer<Note> > Database::notesSync(const QSharedPointer<Category> &category, const QSharedPointer<Note> &parentNote)
+{
+    QVector<QSharedPointer<Note>> result;
+
+    if (m_categoryNoteGot.value(category->id())) {
+        for (auto n : m_notePerId) {
+            if (n->categoryId() != category->id()) {
+                continue;
+            }
+            if ((parentNote.isNull() && n->parentId() == Note::InvalidId)
+                    || (n->parentId() == parentNote->id())) {
+                result.append(n);
+            }
+        }
+    } else {
+        auto notesJson = m_storage->notes(category->id(), parentNote.isNull() ? Note::InvalidId : parentNote->id());
+        for (auto noteJson : notesJson) {
+            auto note = QSharedPointer<Note>::create();
+            note->deserializeFromJson(noteJson.toObject());
+            result.append(note);
+
+            m_notePerId[note->id()] = note;
+        }
+
+        m_categoryNoteGot[category->id()] = true;
+    }
+
+    HavingParent::sortByOrderIndex(result);
+
+    return result;
+}
+
 bool Database::setCategoryParent(const QSharedPointer<Category> &category,
                                  const QSharedPointer<Category> &parentCategory,
                                  int index)
@@ -144,35 +176,11 @@ bool Database::setCategoryParent(const QSharedPointer<Category> &category,
     return v;
 }
 
-QFuture<QVector<QSharedPointer<Note>>> Database::notes(const QSharedPointer<Category> &category, const QSharedPointer<Note> &parentNote)
+QFuture<QVector<QSharedPointer<Note>>> Database::notes(const QSharedPointer<Category> &category,
+                                                       const QSharedPointer<Note> &parentNote)
 {
     return QtConcurrent::run([=]() {
-        QVector<QSharedPointer<Note>> result;
-
-        if (m_categoryNoteGot.value(category->id())) {
-            for (auto n : m_notePerId) {
-                if (n->categoryId() != category->id()) {
-                    continue;
-                }
-                if ((parentNote.isNull() && n->parentId() == Note::InvalidId)
-                        || (n->parentId() == parentNote->id())) {
-                    result.append(n);
-                }
-            }
-        } else {
-            auto notesJson = m_storage->notes(category->id(), parentNote.isNull() ? Note::InvalidId : parentNote->id());
-            for (auto noteJson : notesJson) {
-                auto note = QSharedPointer<Note>::create();
-                note->deserializeFromJson(noteJson.toObject());
-                result.append(note);
-
-                m_notePerId[note->id()] = note;
-            }
-
-            m_categoryNoteGot[category->id()] = true;
-        }
-
-        return result;
+        return this->notesSync(category, parentNote);
     });
 }
 

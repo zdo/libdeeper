@@ -40,6 +40,8 @@ public:
     // Notes.
     QFuture<QVector<QSharedPointer<Note>>> notes(const QSharedPointer<Category> &category,
                                                  const QSharedPointer<Note> &parentNote = nullptr);
+    QVector<QSharedPointer<Note>> notesSync(const QSharedPointer<Category> &category,
+                                            const QSharedPointer<Note> &parentNote = nullptr);
     QSharedPointer<Note> createNote(const QSharedPointer<Category> &category,
                                     const QSharedPointer<Note> &parentNote = nullptr);
     void saveNote(const QSharedPointer<Note> &note);

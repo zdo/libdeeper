@@ -111,7 +111,9 @@ void StorageLocalJsonFile::deleteCategory(const QString &id)
 QJsonArray StorageLocalJsonFile::notes(const QString &categoryId, const QString &parentNoteId)
 {
     QJsonArray notesResult;
-    for (auto noteRaw : m_root["notes"].toArray()) {
+
+    auto notes = m_root["notes"].toObject();
+    for (auto noteRaw : notes) {
         auto note = noteRaw.toObject();
         if (note["parentId"].toString() == parentNoteId && note["categoryId"].toString() == categoryId) {
             notesResult.append(note);

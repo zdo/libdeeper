@@ -19,6 +19,14 @@ public:
     bool hasParent() const { return !this->isRoot(); }
 
     template <typename T>
+    static void sortByOrderIndex(QVector<T> &list)
+    {
+        std::sort(list.begin(), list.end(), [](const T &t1, const T &t2) {
+            return t1->orderIndex() < t2->orderIndex();
+        });
+    }
+
+    template <typename T>
     static QVector<T> children(QMap<QString, T> &objects, T o)
     {
         QVector<T> result;
@@ -28,9 +36,7 @@ public:
                 result.append(t);
             }
         }
-        std::sort(result.begin(), result.end(), [](const T &t1, const T &t2) {
-            return t1->orderIndex() < t2->orderIndex();
-        });
+        HavingParent::sortByOrderIndex(result);
         return result;
     }
 
