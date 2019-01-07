@@ -1,14 +1,11 @@
 #include "Database.hpp"
 #include "Storage/StorageFactory.hpp"
 
-#include <QFutureWatcher>
-#include <QtConcurrent>
-
 namespace deeper {
 
 template <typename T>
-static QVector<QSharedPointer<T>> fromArrayToSharedPointers(const QJsonArray &src) {
-    QVector<QSharedPointer<T>> result;
+static QList<QSharedPointer<T>> fromArrayToSharedPointers(const QJsonArray &src) {
+    QList<QSharedPointer<T>> result;
     for (const QJsonValue &v : src) {
         QSharedPointer<T> t = QSharedPointer<T>::create();
         t->deserializeFromJson(v.toObject());
@@ -35,49 +32,39 @@ void Database::switchAndOverwriteStorage(QSharedPointer<AbstractStorage> storage
 
     m_storage->clearAllData();
 
-    for (auto c : m_categoryPerId) {
+    for (auto c : m_categories->allObjects()) {
         this->saveCategory(c);
     }
 }
 
-QVector<QSharedPointer<Category>> Database::rootCategories()
+void Database::deleteCategory(const QSharedPointer<Category> &category)
 {
-    return HavingParent::children(m_categoryPerId, QSharedPointer<Category>());
-}
+    QList<QSharedPointer<Category>> affected;
+    QList<QSharedPointer<Category>> deepChildren = m_categories->allDeepChildren(category);
+    m_categories->remove(category, &affected);
 
-QSharedPointer<Category> Database::categoryWithId(const QString &id)
-{
-    return m_categoryPerId.value(id);
-}
+    m_storage->deleteCategory(category->id());
+    for (auto c : affected) {
+        m_storage->saveCategory(c->serializeToJson());
+    }
 
-QSharedPointer<Category> Database::parentOfCategory(const QSharedPointer<Category> &category)
-{
-    if (category->hasParent()) {
-        return this->categoryWithId(category->parentId());
-    } else {
-        return nullptr;
+    for (auto c : deepChildren) {
+        m_storage->deleteCategory(c->id());
     }
 }
 
-QVector<QSharedPointer<Category> > Database::childrenOfCategory(const QSharedPointer<Category> &category)
+QList<QSharedPointer<Tag>> Database::tags()
 {
-    return HavingParent::children(m_categoryPerId, category);
-}
-
-void Database::deleteCategory(const QSharedPointer<Category> &category)
-{
-    HavingParent::remove(m_categoryPerId, category);
-    m_categoryPerId.remove(category->id());
-    m_storage->deleteCategory(category->id());
-}
-
-QVector<QSharedPointer<Tag>> Database::tags()
-{
-    QVector<QSharedPointer<Tag>> result;
+    QList<QSharedPointer<Tag>> result;
     for (auto t : m_tags) {
         result.append(t);
     }
     return result;
+}
+
+QSharedPointer<HavingParentTree<Category>> Database::categories()
+{
+    return m_categories;
 }
 
 QSharedPointer<Category> Database::createCategory(const QSharedPointer<Category> &parent)
@@ -86,10 +73,11 @@ QSharedPointer<Category> Database::createCategory(const QSharedPointer<Category>
     newCategory->generateRandomId();
     newCategory->setTitle(QObject::tr("New category"));
 
-    m_categoryPerId[newCategory->id()] = newCategory;
-    HavingParent::insert(m_categoryPerId, newCategory, parent, -1);
-
-    this->saveCategory(newCategory);
+    QList<QSharedPointer<Category>> affected;
+    m_categories->move(newCategory, parent, -1, &affected);
+    for (auto c : affected) {
+        m_storage->saveCategory(c->serializeToJson());
+    }
 
     return newCategory;
 }
@@ -99,89 +87,61 @@ void Database::saveCategory(const QSharedPointer<Category> &category)
     m_storage->saveCategory(category->serializeToJson());
 }
 
-void Database::refresh(bool sync)
+void Database::refresh()
 {
-    auto fn = [=]() {
-        auto baseInfo = m_storage->getBaseInfo();
-        auto categories = fromArrayToSharedPointers<Category>(baseInfo.categories);
+    this->clear();
 
-        m_categoryPerId.clear();
-        for (auto c : categories) {
-            m_categoryPerId[c->id()] = c;
-        }
+    auto baseInfo = m_storage->getBaseInfo();
+    auto categories = fromArrayToSharedPointers<Category>(baseInfo.categories);
 
-        m_tags = fromArrayToSharedPointers<Tag>(baseInfo.tags);
-        m_noteStates = fromArrayToSharedPointers<NoteState>(baseInfo.noteStates);
-        m_goals = fromArrayToSharedPointers<Goal>(baseInfo.goals);
+    m_categories->clearAndFillWith(categories);
 
-        emit this->onRefresh();
-    };
-
-    if (sync) {
-        fn();
-    } else {
-        QtConcurrent::run([=]() {
-            fn();
-        });
-    }
+    m_tags = fromArrayToSharedPointers<Tag>(baseInfo.tags);
+    m_noteStates = fromArrayToSharedPointers<NoteState>(baseInfo.noteStates);
+    m_goals = fromArrayToSharedPointers<Goal>(baseInfo.goals);
 }
 
-QVector<QSharedPointer<Note> > Database::notesSync(const QSharedPointer<Category> &category, const QSharedPointer<Note> &parentNote)
+void Database::clear()
 {
-    QVector<QSharedPointer<Note>> result;
+    m_categories = QSharedPointer<HavingParentTree<Category>>::create();
+    m_tags.clear();
+    m_noteStates.clear();
+    m_goals.clear();
+    m_notesPerCategoryId.clear();
+}
 
-    if (m_categoryNoteGot.value(category->id())) {
-        for (auto n : m_notePerId) {
-            if (n->categoryId() != category->id()) {
-                continue;
-            }
-            if ((parentNote.isNull() && n->parentId() == Note::InvalidId)
-                    || (n->parentId() == parentNote->id())) {
-                result.append(n);
-            }
-        }
-    } else {
+QSharedPointer<HavingParentTree<Note>> Database::notes(const QSharedPointer<Category> &category, const QSharedPointer<Note> &parentNote)
+{
+    QSharedPointer<HavingParentTree<Note>> tree = m_notesPerCategoryId.value(category->id());
+
+    if (tree.isNull()) {
         auto notesJson = m_storage->notes(category->id(), parentNote.isNull() ? Note::InvalidId : parentNote->id());
+        QList<QSharedPointer<Note>> notes;
         for (auto noteJson : notesJson) {
             auto note = QSharedPointer<Note>::create();
             note->deserializeFromJson(noteJson.toObject());
-            result.append(note);
-
-            m_notePerId[note->id()] = note;
+            notes.append(note);
         }
 
-        m_categoryNoteGot[category->id()] = true;
+        tree = QSharedPointer<HavingParentTree<Note>>::create();
+        tree->clearAndFillWith(notes);
+
+        m_notesPerCategoryId[category->id()] = tree;
     }
 
-    HavingParent::sortByOrderIndex(result);
-
-    return result;
+    return tree;
 }
 
 bool Database::setCategoryParent(const QSharedPointer<Category> &category,
                                  const QSharedPointer<Category> &parentCategory,
                                  int index)
 {
-    auto oldParent = this->parentOfCategory(category);
-    bool v = HavingParent::insert(m_categoryPerId, category, parentCategory, index);
-
-    this->saveCategory(category);
-    for (auto oldSibling : this->childrenOfCategory(oldParent)) {
-        this->saveCategory(oldSibling);
+    QList<QSharedPointer<Category>> affected;
+    bool v = m_categories->move(category, parentCategory, index, &affected);
+    for (auto o : affected) {
+        this->saveCategory(o);
     }
-    for (auto newSibling : this->childrenOfCategory(parentCategory)) {
-        this->saveCategory(newSibling);
-    }
-
     return v;
-}
-
-QFuture<QVector<QSharedPointer<Note>>> Database::notes(const QSharedPointer<Category> &category,
-                                                       const QSharedPointer<Note> &parentNote)
-{
-    return QtConcurrent::run([=]() {
-        return this->notesSync(category, parentNote);
-    });
 }
 
 QSharedPointer<Note> Database::createNote(const QSharedPointer<Category> &category, const QSharedPointer<Note> &parentNote)
@@ -192,14 +152,15 @@ QSharedPointer<Note> Database::createNote(const QSharedPointer<Category> &catego
     newNote->setCategoryId(category->id());
     newNote->setCreationTime(QDateTime::currentDateTime());
 
-    int notesCount = this->notes(category, parentNote).result().count();
+    int notesCount = this->notes(category, parentNote)->count();
     newNote->setOrderIndex(notesCount);
 
     if (!parentNote.isNull()) {
         newNote->setParentId(parentNote->id());
     }
 
-    m_notePerId[newNote->id()] = newNote;
+    m_notesPerCategoryId[category->id()]->move(newNote, parentNote);
+    this->saveNote(newNote);
 
     return newNote;
 }
@@ -211,44 +172,26 @@ void Database::saveNote(const QSharedPointer<Note> &note)
 
 void Database::deleteNote(const QSharedPointer<Note> &note)
 {
+    QList<QSharedPointer<Note>> affected;
+    QList<QSharedPointer<Note>> deepChildren = m_notesPerCategoryId[note->categoryId()]->allDeepChildren(note);
+    m_notesPerCategoryId[note->categoryId()]->remove(note, &affected);
+
+    for (auto v : affected) {
+        this->saveNote(v);
+    }
+
     m_storage->deleteNote(note->id());
+    for (auto v : deepChildren) {
+        m_storage->deleteNote(v->id());
+    }
 }
 
 bool Database::setNoteParent(const QSharedPointer<Note> &note, const QSharedPointer<Category> &category,
                              const QSharedPointer<Note> &parentNote, int index)
 {
-    QMap<QString, QSharedPointer<Note>> notesToSave;
-
-    notesToSave[note->id()] = note;
-    if (!parentNote.isNull()) {
-        notesToSave[parentNote->id()] = parentNote;
-    }
-
-    if (note->categoryId() != category->id()) {
-        // Remove from previous category.
-        QMap<QString, QSharedPointer<Note>> tmpNotes;
-        for (auto n : m_notePerId) {
-            if (n->categoryId() == note->categoryId()) {
-                tmpNotes[n->id()] = n;
-                notesToSave[n->id()] = n;
-            }
-        }
-        HavingParent::remove(tmpNotes, note);
-    }
-
-    // Add to new category.
-    note->setCategoryId(category->id());
-
-    QMap<QString, QSharedPointer<Note>> tmpNotes;
-    for (auto n : m_notePerId) {
-        if (n->categoryId() == category->id()) {
-            tmpNotes[n->id()] = n;
-            notesToSave[n->id()] = n;
-        }
-    }
-    bool v = HavingParent::insert(tmpNotes, note, parentNote, index);
-
-    for (auto n : notesToSave) {
+    QList<QSharedPointer<Note>> affected;
+    bool v = m_notesPerCategoryId[category->id()]->move(note, parentNote, index, &affected);
+    for (auto n : affected) {
         m_storage->saveNote(n->serializeToJson());
     }
 

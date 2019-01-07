@@ -3,7 +3,7 @@
 
 #include "Serializable.hpp"
 #include "HavingParent.hpp"
-#include <QVector>
+#include <QList>
 
 namespace deeper {
 
@@ -16,13 +16,13 @@ public:
     QString title() const;
     void setTitle(const QString &title);
 
-    QVector<QString> tagIdList() const;
-    void setTagIdList(const QVector<QString> &tagIdList);
+    QList<QString> tagIdList() const;
+    void setTagIdList(const QList<QString> &tagIdList);
 
 private:
-    QVector<QString> m_childrenIds;
+    QList<QString> m_childrenIds;
     QString m_title;
-    QVector<QString> m_tagIdList;
+    QList<QString> m_tagIdList;
 };
 
 } // namespace deeper

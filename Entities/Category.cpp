@@ -33,12 +33,12 @@ void Category::setTitle(const QString &title)
 
 }
 
-QVector<QString> Category::tagIdList() const
+QList<QString> Category::tagIdList() const
 {
     return m_tagIdList;
 }
 
-void Category::setTagIdList(const QVector<QString> &tagIdList)
+void Category::setTagIdList(const QList<QString> &tagIdList)
 {
     m_tagIdList = tagIdList;
 }

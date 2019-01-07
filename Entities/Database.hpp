@@ -6,31 +6,28 @@
 #include "Tag.hpp"
 #include "Note.hpp"
 #include "Goal.hpp"
+#include "HavingParentTree.hpp"
 
 #include "../Storage/AbstractStorage.hpp"
 #include <QSharedPointer>
 
 namespace deeper {
 
-class Database : public QObject
+class Database
 {
-    Q_OBJECT
-
 public:
     Database(const QUrl &url);
     Database(QSharedPointer<AbstractStorage> storage);
 
     // Storage.
     void switchAndOverwriteStorage(QSharedPointer<AbstractStorage> storage);
+    void refresh();
 
     // Tags.
-    QVector<QSharedPointer<Tag>> tags();
+    QList<QSharedPointer<Tag>> tags();
 
     // Categories.
-    QVector<QSharedPointer<Category>> rootCategories();
-    QSharedPointer<Category> categoryWithId(const QString &id);
-    QSharedPointer<Category> parentOfCategory(const QSharedPointer<Category> &category);
-    QVector<QSharedPointer<Category>> childrenOfCategory(const QSharedPointer<Category> &category);
+    QSharedPointer<HavingParentTree<Category>> categories();
 
     QSharedPointer<Category> createCategory(const QSharedPointer<Category> &parent = nullptr);
     void saveCategory(const QSharedPointer<Category> &category);
@@ -38,10 +35,8 @@ public:
     bool setCategoryParent(const QSharedPointer<Category> &category, const QSharedPointer<Category> &parentCategory, int index = -1);
 
     // Notes.
-    QFuture<QVector<QSharedPointer<Note>>> notes(const QSharedPointer<Category> &category,
+    QSharedPointer<HavingParentTree<Note>> notes(const QSharedPointer<Category> &category,
                                                  const QSharedPointer<Note> &parentNote = nullptr);
-    QVector<QSharedPointer<Note>> notesSync(const QSharedPointer<Category> &category,
-                                            const QSharedPointer<Note> &parentNote = nullptr);
     QSharedPointer<Note> createNote(const QSharedPointer<Category> &category,
                                     const QSharedPointer<Note> &parentNote = nullptr);
     void saveNote(const QSharedPointer<Note> &note);
@@ -49,22 +44,17 @@ public:
     bool setNoteParent(const QSharedPointer<Note> &note, const QSharedPointer<Category> &category,
                        const QSharedPointer<Note> &parentNote, int index = -1);
 
-public slots:
-    void refresh(bool sync=false);
-
-signals:
-    void onRefresh();
-
 private:
     QSharedPointer<AbstractStorage> m_storage;
 
-    QMap<QString, QSharedPointer<Category>> m_categoryPerId;
-    QVector<QSharedPointer<Tag>> m_tags;
-    QVector<QSharedPointer<NoteState>> m_noteStates;
-    QVector<QSharedPointer<Goal>> m_goals;
+    QSharedPointer<HavingParentTree<Category>> m_categories;
+    QList<QSharedPointer<Tag>> m_tags;
+    QList<QSharedPointer<NoteState>> m_noteStates;
+    QList<QSharedPointer<Goal>> m_goals;
 
-    QMap<QString, bool> m_categoryNoteGot;
-    QMap<QString, QSharedPointer<Note>> m_notePerId;
+    QMap<QString, QSharedPointer<HavingParentTree<Note>>> m_notesPerCategoryId;
+
+    void clear();
 };
 
 } // namespace deeper

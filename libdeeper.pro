@@ -91,4 +91,5 @@ HEADERS += \
     Entities/Goal.hpp \
     Entities/HavingId.hpp \
     Entities/DatabaseStuff/CategoryManager.hpp \
-    Entities/HavingParent.hpp
+    Entities/HavingParent.hpp \
+    Entities/HavingParentTree.hpp

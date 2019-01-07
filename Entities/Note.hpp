@@ -7,7 +7,7 @@
 #include "Achievement.hpp"
 #include "HavingParent.hpp"
 
-#include <QVector>
+#include <QList>
 #include <QDateTime>
 
 namespace deeper {
@@ -37,13 +37,13 @@ private:
 
     QString m_title, m_text;
     QString m_stateId = InvalidId;
-    QVector<QString> m_tagIdList;
+    QList<QString> m_tagIdList;
 
     QDateTime m_scheduledTime;
     QDateTime m_deadlineTime;
 
-    QVector<TimeTrack> m_timeTracks;
-    QVector<Achievement> m_achievements;
+    QList<TimeTrack> m_timeTracks;
+    QList<Achievement> m_achievements;
 };
 
 } // namespace deeper

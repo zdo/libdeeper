@@ -4,7 +4,7 @@
 #include <QJsonValue>
 #include <QJsonObject>
 #include <QJsonArray>
-#include <QVector>
+#include <QList>
 #include <QSharedPointer>
 
 namespace deeper {
@@ -17,7 +17,7 @@ public:
     virtual void deserializeFromJson(const QJsonObject &jsonRaw) = 0;
 
     template <typename T>
-    static QJsonArray toArraySimple(const QVector<T> &src) {
+    static QJsonArray toArraySimple(const QList<T> &src) {
         QJsonArray result;
         for (const T &v : src) {
             result.append(v);
@@ -26,7 +26,7 @@ public:
     }
 
     template <typename T>
-    static QJsonArray toArray(const QVector<T> &src) {
+    static QJsonArray toArray(const QList<T> &src) {
         QJsonArray result;
         for (const T &v : src) {
             result.append(v.serializeToJson());
@@ -35,7 +35,7 @@ public:
     }
 
     template <typename T>
-    static QJsonArray toArrayPtr(const QVector<T> &src) {
+    static QJsonArray toArrayPtr(const QList<T> &src) {
         QJsonArray result;
         for (const T &v : src) {
             result.append(v->serializeToJson());
@@ -43,16 +43,16 @@ public:
         return result;
     }
 
-    static QVector<int> fromArrayInt(const QJsonArray &src) {
-        QVector<int> result;
+    static QList<int> fromArrayInt(const QJsonArray &src) {
+        QList<int> result;
         for (const QJsonValue &v : src) {
             result.append(v.toInt());
         }
         return result;
     }
 
-    static QVector<QString> fromArrayString(const QJsonArray &src) {
-        QVector<QString> result;
+    static QList<QString> fromArrayString(const QJsonArray &src) {
+        QList<QString> result;
         for (const QJsonValue &v : src) {
             result.append(v.toString());
         }
@@ -60,8 +60,8 @@ public:
     }
 
     template <typename T>
-    static QVector<T> fromArray(const QJsonArray &src) {
-        QVector<T> result;
+    static QList<T> fromArray(const QJsonArray &src) {
+        QList<T> result;
         for (const QJsonValue &v : src) {
             T t;
             t.deserializeFromJson(v.toObject());
@@ -71,8 +71,8 @@ public:
     }
 
     template <typename T>
-    static QVector<QSharedPointer<T>> fromArraySharedPointer(const QJsonArray &src) {
-        QVector<QSharedPointer<T>> result;
+    static QList<QSharedPointer<T>> fromArraySharedPointer(const QJsonArray &src) {
+        QList<QSharedPointer<T>> result;
         for (const QJsonValue &v : src) {
             auto t = QSharedPointer<T>::create();
             t->deserializeFromJson(v.toObject());

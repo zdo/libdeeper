@@ -34,14 +34,20 @@ private slots:
     void initTestCase()
     {
         qDebug() << "Path to temporary JSON file" << m_jsonTmpPath;
-        this->reloadDatabaseToInitialState();
+    }
+
+    void testStorageCreation()
+    {
+        auto storage = QSharedPointer<StorageLocalJsonFile>::create(":/test/database.json");
+        m_database = QSharedPointer<Database>::create(storage);
+        m_database->refresh();
     }
 
     void reloadDatabaseToInitialState()
     {
         auto storage = QSharedPointer<StorageLocalJsonFile>::create(":/test/database.json");
         m_database = QSharedPointer<Database>::create(storage);
-        m_database->refresh(true);
+        m_database->refresh();
 
         auto writableStorage = QSharedPointer<StorageLocalJsonFile>::create(m_jsonTmpPath);
         m_database->switchAndOverwriteStorage(writableStorage);
@@ -85,119 +91,132 @@ private slots:
 
     void databaseBasicCheck()
     {
-        QCOMPARE(m_database->rootCategories().count(), 2);
-        QVERIFY(m_database->categoryWithId("someid") != nullptr);
-        QVERIFY(m_database->categoryWithId("child1") != nullptr);
-        QVERIFY(m_database->categoryWithId("child2") != nullptr);
+        this->reloadDatabaseToInitialState();
+        QCOMPARE(m_database->categories()->rootObjects().count(), 2);
+        QVERIFY(m_database->categories()->objectWithId("someid") != nullptr);
+        QVERIFY(m_database->categories()->objectWithId("child1") != nullptr);
+        QVERIFY(m_database->categories()->objectWithId("child2") != nullptr);
     }
 
     void databaseCheckParent()
     {
-        auto root = m_database->categoryWithId("someid");
-        auto child1 = m_database->categoryWithId("child1");
-        auto child2 = m_database->categoryWithId("child2");
-        auto root2 = m_database->categoryWithId("root2");
+        auto root = m_database->categories()->objectWithId("someid");
+        auto child1 = m_database->categories()->objectWithId("child1");
+        auto child2 = m_database->categories()->objectWithId("child2");
+        auto root2 = m_database->categories()->objectWithId("root2");
 
-        QVERIFY(m_database->parentOfCategory(child1) == root);
-        QVERIFY(m_database->parentOfCategory(child2) == root);
-        QVERIFY(m_database->parentOfCategory(root) == nullptr);
-        QVERIFY(m_database->parentOfCategory(root2) == nullptr);
+        QVERIFY(m_database->categories()->parent(child1) == root);
+        QVERIFY(m_database->categories()->parent(child2) == root);
+        QVERIFY(m_database->categories()->parent(root) == nullptr);
+        QVERIFY(m_database->categories()->parent(root2) == nullptr);
     }
 
     void databaseParentChanging()
     {
-        auto root = m_database->categoryWithId("someid");
-        auto child1 = m_database->categoryWithId("child1");
-        auto child2 = m_database->categoryWithId("child2");
-        auto root2 = m_database->categoryWithId("root2");
+        auto root = m_database->categories()->objectWithId("someid");
+        auto child1 = m_database->categories()->objectWithId("child1");
+        auto child2 = m_database->categories()->objectWithId("child2");
+        auto root2 = m_database->categories()->objectWithId("root2");
 
         m_database->setCategoryParent(child2, child1);
-        QVERIFY(m_database->parentOfCategory(child1) == root);
-        QVERIFY(m_database->parentOfCategory(child2) == child1);
-        QVERIFY(m_database->parentOfCategory(root) == nullptr);
-        QVERIFY(m_database->parentOfCategory(root2) == nullptr);
+        QVERIFY(m_database->categories()->parent(child1) == root);
+        QVERIFY(m_database->categories()->parent(child2) == child1);
+        QVERIFY(m_database->categories()->parent(root) == nullptr);
+        QVERIFY(m_database->categories()->parent(root2) == nullptr);
 
         m_database->setCategoryParent(root2, root, 0);
-        QCOMPARE(m_database->rootCategories().count(), 1);
-        QCOMPARE(m_database->rootCategories()[0]->id(), "someid");
-        QCOMPARE(m_database->childrenOfCategory(root).count(), 2);
-        QCOMPARE(m_database->childrenOfCategory(root)[0]->id(), "root2");
-        QCOMPARE(m_database->childrenOfCategory(root)[1]->id(), "child1");
+        QCOMPARE(m_database->categories()->rootObjects().count(), 1);
+        QCOMPARE(m_database->categories()->rootObjects()[0]->id(), "someid");
+        QCOMPARE(m_database->categories()->children(root).count(), 2);
+        QCOMPARE(m_database->categories()->children(root)[0]->id(), "root2");
+        QCOMPARE(m_database->categories()->children(root)[1]->id(), "child1");
     }
 
     void databaseParentChangingClampingRegressive()
     {
         this->reloadDatabaseToInitialState();
 
-        auto root = m_database->categoryWithId("someid");
-        auto child1 = m_database->categoryWithId("child1");
-        auto child2 = m_database->categoryWithId("child2");
-        auto root2 = m_database->categoryWithId("root2");
+        auto root = m_database->categories()->objectWithId("someid");
+        auto child1 = m_database->categories()->objectWithId("child1");
+        auto child2 = m_database->categories()->objectWithId("child2");
+        auto root2 = m_database->categories()->objectWithId("root2");
 
         m_database->setCategoryParent(root2, nullptr, 100500); // too big index offset
-        QCOMPARE(m_database->rootCategories().count(), 2);
-        QCOMPARE(m_database->rootCategories()[0]->id(), "someid");
-        QCOMPARE(m_database->rootCategories()[1]->id(), "root2");
+        QCOMPARE(m_database->categories()->rootObjects().count(), 2);
+        QCOMPARE(m_database->categories()->rootObjects()[0]->id(), "someid");
+        QCOMPARE(m_database->categories()->rootObjects()[1]->id(), "root2");
 
         m_database->setCategoryParent(root, nullptr, -100500); // too small index offset
-        QCOMPARE(m_database->rootCategories().count(), 2);
-        QCOMPARE(m_database->rootCategories()[0]->id(), "root2");
-        QCOMPARE(m_database->rootCategories()[1]->id(), "someid");
+        QCOMPARE(m_database->categories()->rootObjects().count(), 2);
+        QCOMPARE(m_database->categories()->rootObjects()[0]->id(), "root2");
+        QCOMPARE(m_database->categories()->rootObjects()[1]->id(), "someid");
     }
 
     void databaseDeleteCategoryRegressive()
     {
         this->reloadDatabaseToInitialState();
 
-        auto root = m_database->categoryWithId("someid");
-        auto child1 = m_database->categoryWithId("child1");
-        auto child2 = m_database->categoryWithId("child2");
-        auto root2 = m_database->categoryWithId("root2");
+        auto root = m_database->categories()->objectWithId("someid");
+        auto child1 = m_database->categories()->objectWithId("child1");
+        auto child2 = m_database->categories()->objectWithId("child2");
+        auto root2 = m_database->categories()->objectWithId("root2");
 
         m_database->deleteCategory(root);
-        QCOMPARE(m_database->rootCategories().count(), 1);
-        QCOMPARE(m_database->rootCategories()[0]->id(), "root2");
+        QCOMPARE(m_database->categories()->rootObjects().count(), 1);
+        QCOMPARE(m_database->categories()->rootObjects()[0]->id(), "root2");
     }
 
     void basicNotesOperations()
     {
         this->reloadDatabaseToInitialState();
 
-        auto root = m_database->categoryWithId("someid");
-        auto child1 = m_database->categoryWithId("child1");
-        auto child2 = m_database->categoryWithId("child2");
-        auto root2 = m_database->categoryWithId("root2");
+        auto root = m_database->categories()->objectWithId("someid");
+        auto child1 = m_database->categories()->objectWithId("child1");
+        auto child2 = m_database->categories()->objectWithId("child2");
+        auto root2 = m_database->categories()->objectWithId("root2");
 
         auto note1 = m_database->createNote(root);
         note1->setTitle("Note1");
         m_database->saveNote(note1);
 
-        auto notes = m_database->notesSync(root);
-        QCOMPARE(notes.count(), 1);
-        QCOMPARE(notes[0]->title(), "Note1");
+        auto notes = m_database->notes(root);
+        QCOMPARE(notes->count(), 1);
+        QCOMPARE(notes->rootObjects()[0]->title(), "Note1");
 
 
         auto note2 = m_database->createNote(root);
         note2->setTitle("Note2");
         m_database->saveNote(note2);
 
-        notes = m_database->notesSync(root);
-        QCOMPARE(notes.count(), 2);
-        QCOMPARE(notes[0]->title(), "Note1");
-        QCOMPARE(notes[1]->title(), "Note2");
+        notes = m_database->notes(root);
+        QCOMPARE(notes->rootObjects().count(), 2);
+        QCOMPARE(notes->rootObjects()[0]->title(), "Note1");
+        QCOMPARE(notes->rootObjects()[1]->title(), "Note2");
     }
 
     void readNotesFromFile()
     {
         auto writableStorage = QSharedPointer<StorageLocalJsonFile>::create(m_jsonTmpPath);
         auto database = QSharedPointer<Database>::create(writableStorage);
-        database->refresh(true);
+        database->refresh();
 
-        auto root = database->categoryWithId("someid");
-        auto notes = database->notesSync(root);
-        QCOMPARE(notes.count(), 2);
-        QCOMPARE(notes[0]->title(), "Note1");
-        QCOMPARE(notes[1]->title(), "Note2");
+        auto root = database->categories()->objectWithId("someid");
+        auto notes = database->notes(root);
+        QCOMPARE(notes->rootObjects().count(), 2);
+        QCOMPARE(notes->rootObjects()[0]->title(), "Note1");
+        QCOMPARE(notes->rootObjects()[1]->title(), "Note2");
+
+        database->setNoteParent(notes->rootObjects()[1],
+                database->categories()->objectWithId(notes->rootObjects()[0]->categoryId()),
+                notes->rootObjects()[0]);
+        notes = database->notes(root);
+        QCOMPARE(notes->rootObjects().count(), 1);
+
+        QCOMPARE(notes->rootObjects()[0]->title(), "Note1");
+        QCOMPARE(notes->children(notes->rootObjects()[0])[0]->title(), "Note2");
+
+        database->deleteNote(notes->rootObjects()[0]);
+        QCOMPARE(notes->rootObjects().count(), 0);
     }
 
     void cleanupTestCase()
