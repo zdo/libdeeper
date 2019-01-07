@@ -34,7 +34,7 @@ public:
     virtual void saveCategory(const QJsonObject &json) = 0;
     virtual void deleteCategory(const QString &id) = 0;
 
-    virtual QJsonArray notes(const QString &categoryId, const QString &parentNoteId) = 0;
+    virtual QJsonArray notes(const QString &categoryId) = 0;
     virtual void saveNote(const QJsonObject &json) = 0;
     virtual void deleteNote(const QString &id) = 0;
 protected:

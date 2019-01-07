@@ -35,14 +35,15 @@ public:
     bool setCategoryParent(const QSharedPointer<Category> &category, const QSharedPointer<Category> &parentCategory, int index = -1);
 
     // Notes.
-    QSharedPointer<HavingParentTree<Note>> notes(const QSharedPointer<Category> &category,
-                                                 const QSharedPointer<Note> &parentNote = nullptr);
+    QSharedPointer<HavingParentTree<Note>> notes(const QSharedPointer<Category> &category);
     QSharedPointer<Note> createNote(const QSharedPointer<Category> &category,
                                     const QSharedPointer<Note> &parentNote = nullptr);
     void saveNote(const QSharedPointer<Note> &note);
     void deleteNote(const QSharedPointer<Note> &note);
     bool setNoteParent(const QSharedPointer<Note> &note, const QSharedPointer<Category> &category,
                        const QSharedPointer<Note> &parentNote, int index = -1);
+
+    const QList<QSharedPointer<NoteState>> & noteStates() const;
 
 private:
     QSharedPointer<AbstractStorage> m_storage;

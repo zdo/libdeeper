@@ -110,12 +110,12 @@ void Database::clear()
     m_notesPerCategoryId.clear();
 }
 
-QSharedPointer<HavingParentTree<Note>> Database::notes(const QSharedPointer<Category> &category, const QSharedPointer<Note> &parentNote)
+QSharedPointer<HavingParentTree<Note>> Database::notes(const QSharedPointer<Category> &category)
 {
     QSharedPointer<HavingParentTree<Note>> tree = m_notesPerCategoryId.value(category->id());
 
     if (tree.isNull()) {
-        auto notesJson = m_storage->notes(category->id(), parentNote.isNull() ? Note::InvalidId : parentNote->id());
+        auto notesJson = m_storage->notes(category->id());
         QList<QSharedPointer<Note>> notes;
         for (auto noteJson : notesJson) {
             auto note = QSharedPointer<Note>::create();
@@ -152,7 +152,7 @@ QSharedPointer<Note> Database::createNote(const QSharedPointer<Category> &catego
     newNote->setCategoryId(category->id());
     newNote->setCreationTime(QDateTime::currentDateTime());
 
-    int notesCount = this->notes(category, parentNote)->count();
+    int notesCount = this->notes(category)->children(parentNote).count();
     newNote->setOrderIndex(notesCount);
 
     if (!parentNote.isNull()) {
@@ -196,6 +196,11 @@ bool Database::setNoteParent(const QSharedPointer<Note> &note, const QSharedPoin
     }
 
     return v;
+}
+
+const QList<QSharedPointer<NoteState>> & Database::noteStates() const
+{
+    return m_noteStates;
 }
 
 } // namespace deeper

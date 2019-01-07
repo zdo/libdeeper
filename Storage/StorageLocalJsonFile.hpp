@@ -16,7 +16,7 @@ public:
     void saveCategory(const QJsonObject &json) override;
     void deleteCategory(const QString &id) override;
 
-    QJsonArray notes(const QString &categoryId, const QString &parentNoteId) override;
+    QJsonArray notes(const QString &categoryId) override;
     void saveNote(const QJsonObject &json) override;
     void deleteNote(const QString &id) override;
 

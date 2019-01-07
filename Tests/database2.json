@@ -1,0 +1,87 @@
+{
+    "categories": {
+        "1": {
+            "id": "1",
+            "title": "Job"
+        },
+        "2": {
+            "id": "2",
+            "title": "Personal"
+        }
+    },
+    "goals": {
+    },
+    "noteStates": {
+        "1": {
+            "color": "#cc0000",
+            "id": "1",
+            "isFinished": false,
+            "title": "TODO"
+        },
+        "2": {
+            "color": "#00cc00",
+            "id": "2",
+            "isFinished": true,
+            "title": "DONE"
+        }
+    },
+    "notes": {
+        "3a62eb045cf74a929838758cb1904ab4": {
+            "achievements": [
+            ],
+            "categoryId": "1",
+            "creationTime": 1546881430,
+            "id": "3a62eb045cf74a929838758cb1904ab4",
+            "isArchived": false,
+            "orderIndex": 0,
+            "parentId": "d8a7b241011048d9b12339b4bbc47060",
+            "stateId": "",
+            "tags": [
+            ],
+            "text": "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\np, li { white-space: pre-wrap; }\n</style></head><body style=\" font-family:'.SF NS Text'; font-size:13pt; font-weight:400; font-style:normal;\">\n<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">Job2\t</p></body></html>",
+            "timeTracks": [
+            ],
+            "title": "New Note"
+        },
+        "d505dc519c8a42b19e37aa1f15f3b8e9": {
+            "achievements": [
+            ],
+            "categoryId": "2",
+            "creationTime": 1546881429,
+            "id": "d505dc519c8a42b19e37aa1f15f3b8e9",
+            "isArchived": false,
+            "orderIndex": 0,
+            "parentId": "",
+            "stateId": "",
+            "tags": [
+            ],
+            "text": "Mon Jan 7 20:17:09 2019",
+            "timeTracks": [
+            ],
+            "title": "New Note"
+        },
+        "d8a7b241011048d9b12339b4bbc47060": {
+            "achievements": [
+            ],
+            "categoryId": "1",
+            "creationTime": 1546881425,
+            "id": "d8a7b241011048d9b12339b4bbc47060",
+            "isArchived": false,
+            "orderIndex": 0,
+            "parentId": "",
+            "stateId": "",
+            "tags": [
+            ],
+            "text": "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\np, li { white-space: pre-wrap; }\n</style></head><body style=\" font-family:'.SF NS Text'; font-size:13pt; font-weight:400; font-style:normal;\">\n<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\">Job1</p></body></html>",
+            "timeTracks": [
+            ],
+            "title": "New Note"
+        }
+    },
+    "tags": {
+        "1": {
+            "id": "1",
+            "title": "deep"
+        }
+    }
+}

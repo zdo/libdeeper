@@ -219,6 +219,25 @@ private slots:
         QCOMPARE(notes->rootObjects().count(), 0);
     }
 
+    void readNotes2()
+    {
+        auto storage = QSharedPointer<StorageLocalJsonFile>::create(":/test/database2.json");
+        auto database = QSharedPointer<Database>::create(storage);
+        database->refresh();
+
+        auto root = database->categories()->objectWithId("1");
+        QCOMPARE(root->title(), "Job");
+
+        auto notes = database->notes(root);
+        QCOMPARE(notes->count(), 2);
+        QCOMPARE(notes->rootObjects().count(), 1);
+        QCOMPARE(notes->rootObjects()[0]->title(), "New Note");
+
+        auto children = notes->children(notes->rootObjects()[0]);
+        QCOMPARE(children.count(), 1);
+        QCOMPARE(children[0]->title(), "New Note");
+    }
+
     void cleanupTestCase()
     {
         QFile::remove(m_jsonTmpPath);
