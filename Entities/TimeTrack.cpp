@@ -56,6 +56,11 @@ void TimeTrack::setEnd(const QDateTime &end)
     m_end = end;
 }
 
+void TimeTrack::setEndToNow()
+{
+     this->setEnd(QDateTime::currentDateTime());
+}
+
 int TimeTrack::durationInSeconds() const
 {
     QDateTime end;
@@ -65,6 +70,26 @@ int TimeTrack::durationInSeconds() const
         end = m_end;
     }
     return int(m_start.secsTo(end));
+}
+
+TimeTrack::Duration TimeTrack::duration() const
+{
+    Duration d;
+    d.seconds = this->durationInSeconds();
+
+    int minutes = d.seconds / 60;
+    if (minutes > 0) {
+        d.minutes = minutes;
+        d.seconds -= d.minutes * 60;
+
+        int hours = d.minutes / 60;
+        if (hours > 0) {
+            d.hours = hours;
+            d.minutes -= d.hours * 60;
+        }
+    }
+
+    return d;
 }
 
 QString TimeTrack::noteId() const

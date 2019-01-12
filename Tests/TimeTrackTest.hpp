@@ -8,6 +8,25 @@ class TimeTrackTest : public QObject
     Q_OBJECT
 
 private slots:
+    void timeTrack0()
+    {
+        const int h = 2;
+        const int m = 21;
+        const int s = 47;
+        const int duration = s + m * 60 + h * 3600;
+
+        TimeTrack t;
+        t.setStart(QDateTime::currentDateTime().addSecs(-duration));
+        t.setEndToNow();
+
+        QCOMPARE(t.durationInSeconds(), duration);
+
+        auto d = t.duration();
+        QCOMPARE(d.hours, h);
+        QCOMPARE(d.minutes, m);
+        QCOMPARE(d.seconds, s);
+    }
+
     void timeTrack1()
     {
         auto db = createDatabaseFromTemplate();
@@ -23,7 +42,7 @@ private slots:
 
         int durationSeconds = rand() % 3600;
         tt1->setStart(QDateTime::currentDateTime().addSecs(-durationSeconds));
-        tt1->setEnd(QDateTime::currentDateTime());
+        tt1->setEndToNow();
         db->saveTimeTrack(tt1);
         QCOMPARE(db->timeTracksForNote(note).count(), 1);
         QCOMPARE(db->activeTimeTrack(), nullptr);
