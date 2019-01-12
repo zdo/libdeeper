@@ -11,7 +11,7 @@ QJsonObject Goal::serializeToJson() const
     json["noteId"] = m_noteId;
     json["timePeriod"] = m_timePeriod;
     json["targetMinutesTracked"] = m_targetMinutesTracked;
-    json["targetAchievementsCount"] = m_targetAchievementsCount;
+    json["targetAchievementsCount"] = m_targetMilestonesCount;
     return json;
 }
 
@@ -23,7 +23,7 @@ void Goal::deserializeFromJson(const QJsonObject &json)
     m_noteId = json["noteId"].toInt();
     m_timePeriod = TimePeriod(json["timePeriod"].toInt());
     m_targetMinutesTracked = json["targetMinutesTracked"].toInt();
-    m_targetAchievementsCount = json["targetAchievementsCount"].toInt();
+    m_targetMilestonesCount = json["targetAchievementsCount"].toInt();
 }
 
 } // namespace deeper

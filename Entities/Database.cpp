@@ -97,7 +97,16 @@ void Database::refresh()
     m_categories->clearAndFillWith(categories);
 
     m_tags = fromArrayToSharedPointers<Tag>(baseInfo.tags);
+
     m_noteStates = fromArrayToSharedPointers<NoteState>(baseInfo.noteStates);
+    std::sort(m_noteStates.begin(), m_noteStates.end(), [=](const QSharedPointer<NoteState> &n1, const QSharedPointer<NoteState> &n2) {
+        if (n1->isFinished() == n2->isFinished()) {
+            return n1->orderIndex() < n2->orderIndex();
+        } else {
+            return n1->isFinished() ? false : true;
+        }
+    });
+
     m_goals = fromArrayToSharedPointers<Goal>(baseInfo.goals);
 }
 
@@ -107,7 +116,9 @@ void Database::clear()
     m_tags.clear();
     m_noteStates.clear();
     m_goals.clear();
+
     m_notesPerCategoryId.clear();
+    m_notes.clear();
 }
 
 QSharedPointer<HavingParentTree<Note>> Database::notes(const QSharedPointer<Category> &category)
@@ -121,6 +132,8 @@ QSharedPointer<HavingParentTree<Note>> Database::notes(const QSharedPointer<Cate
             auto note = QSharedPointer<Note>::create();
             note->deserializeFromJson(noteJson.toObject());
             notes.append(note);
+
+            m_notes[note->id()] = note;
         }
 
         tree = QSharedPointer<HavingParentTree<Note>>::create();
@@ -130,6 +143,22 @@ QSharedPointer<HavingParentTree<Note>> Database::notes(const QSharedPointer<Cate
     }
 
     return tree;
+}
+
+QSharedPointer<Note> Database::note(const QString &id)
+{
+    QSharedPointer<Note> result = m_notes.value(id);
+    if (result.isNull()) {
+        try {
+            QJsonObject noteJson = m_storage->note(id);
+            result = QSharedPointer<Note>::create();
+            result->deserializeFromJson(noteJson);
+            m_notes[id] = result;
+        } catch (const std::exception &exc) {
+            qCritical() << "Can't obtain note with id" << id << ":" << exc.what();
+        }
+    }
+    return result;
 }
 
 bool Database::setCategoryParent(const QSharedPointer<Category> &category,
@@ -175,6 +204,7 @@ void Database::deleteNote(const QSharedPointer<Note> &note)
     QList<QSharedPointer<Note>> affected;
     QList<QSharedPointer<Note>> deepChildren = m_notesPerCategoryId[note->categoryId()]->allDeepChildren(note);
     m_notesPerCategoryId[note->categoryId()]->remove(note, &affected);
+    m_notes.remove(note->id());
 
     for (auto v : affected) {
         this->saveNote(v);
@@ -198,9 +228,77 @@ bool Database::setNoteParent(const QSharedPointer<Note> &note, const QSharedPoin
     return v;
 }
 
+QSharedPointer<TimeTrack> Database::activeTimeTrack()
+{
+    auto ttJson = m_storage->activeTimeTrack();
+    if (ttJson.isEmpty()) {
+        return nullptr;
+    }
+
+    auto tt = this->obtainAndUpdateTimeTrack(ttJson);
+    return tt;
+}
+
+QList<QSharedPointer<TimeTrack>> Database::timeTracksForNote(const QSharedPointer<Note> &note)
+{
+    QList<QSharedPointer<TimeTrack>> result;
+
+    auto timeTracksJson = m_storage->timeTracksForNote(note->id());
+    for (auto timeTrackRaw : timeTracksJson) {
+        auto tt = this->obtainAndUpdateTimeTrack(timeTrackRaw);
+        result.append(tt);
+    }
+
+    return result;
+}
+
+QSharedPointer<TimeTrack> Database::startTimeTrack(const QSharedPointer<Note> &note)
+{
+    auto activeTT = this->activeTimeTrack();
+    if (!activeTT.isNull()) {
+        activeTT->setEnd(QDateTime::currentDateTime());
+        this->saveTimeTrack(activeTT);
+    }
+
+    auto newTT = QSharedPointer<TimeTrack>::create();
+    newTT->generateRandomId();
+    newTT->setNoteId(note->id());
+    newTT->setStart(QDateTime::currentDateTime());
+    this->saveTimeTrack(newTT);
+
+    m_timeTracks[newTT->id()] = newTT;
+
+    return newTT;
+}
+
+void Database::saveTimeTrack(const QSharedPointer<TimeTrack> &tt)
+{
+    m_storage->saveTimeTrack(tt->serializeToJson());
+}
+
+void Database::deleteTimeTrack(const QSharedPointer<TimeTrack> &tt)
+{
+    m_storage->deleteTimeTrack(tt->id());
+    m_timeTracks.remove(tt->id());
+}
+
 const QList<QSharedPointer<NoteState>> & Database::noteStates() const
 {
     return m_noteStates;
+}
+
+QSharedPointer<TimeTrack> Database::obtainAndUpdateTimeTrack(const QJsonValue &jsonRaw)
+{
+    QJsonObject json = jsonRaw.toObject();
+    QSharedPointer<TimeTrack> tt = m_timeTracks.value(json["id"].toString());
+    if (tt.isNull()) {
+        tt = QSharedPointer<TimeTrack>::create();
+        tt->deserializeFromJson(json);
+        m_timeTracks[tt->id()] = tt;
+    } else {
+        tt->deserializeFromJson(json);
+    }
+    return tt;
 }
 
 } // namespace deeper

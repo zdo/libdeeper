@@ -35,8 +35,14 @@ public:
     virtual void deleteCategory(const QString &id) = 0;
 
     virtual QJsonArray notes(const QString &categoryId) = 0;
+    virtual QJsonObject note(const QString &id) = 0;
     virtual void saveNote(const QJsonObject &json) = 0;
     virtual void deleteNote(const QString &id) = 0;
+
+    virtual QJsonObject activeTimeTrack() = 0;
+    virtual QJsonArray timeTracksForNote(const QString &noteId) = 0;
+    virtual void saveTimeTrack(const QJsonObject &tt) = 0;
+    virtual void deleteTimeTrack(const QString &id) = 0;
 protected:
     static StorageBaseInfo defaultBaseInfo();
 };

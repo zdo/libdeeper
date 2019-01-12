@@ -21,15 +21,15 @@ QJsonObject Note::serializeToJson() const
     json["stateId"] = m_stateId;
     json["tags"] = Serializable::toArraySimple(m_tagIdList);
 
-    if (m_scheduledTime.isValid()) {
-        json["scheduledTime"] = double(m_scheduledTime.toSecsSinceEpoch());
+    if (m_scheduledTime.dateTime.isValid()) {
+        json["scheduledTime"] = double(m_scheduledTime.dateTime.toSecsSinceEpoch());
+        if (m_scheduledTime.durationSeconds > 0) {
+            json["scheduledTimeDuration"] = m_scheduledTime.durationSeconds;
+        }
     }
     if (m_deadlineTime.isValid()) {
         json["deadlineTime"] = double(m_deadlineTime.toSecsSinceEpoch());
     }
-
-    json["timeTracks"] = Serializable::toArray(m_timeTracks);
-    json["achievements"] = Serializable::toArray(m_achievements);
 
     return json;
 }
@@ -52,16 +52,19 @@ void Note::deserializeFromJson(const QJsonObject &json)
 
     double t = json["scheduledTime"].toDouble();
     if (t > 0.0) {
-        m_scheduledTime = QDateTime::fromSecsSinceEpoch(qint64(t));
+        m_scheduledTime.dateTime = QDateTime::fromSecsSinceEpoch(qint64(t));
+        m_scheduledTime.durationSeconds = json["scheduledTimeDuration"].toInt();
+    } else {
+        m_scheduledTime.dateTime = QDateTime();
+        m_scheduledTime.durationSeconds = 0;
     }
 
     t = json["deadlineTime"].toDouble();
     if (t > 0.0) {
         m_deadlineTime = QDateTime::fromSecsSinceEpoch(qint64(t));
+    } else {
+        m_deadlineTime = QDateTime();
     }
-
-    m_timeTracks = Serializable::fromArray<TimeTrack>(json["timeTracks"].toArray());
-    m_achievements = Serializable::fromArray<Achievement>(json["achievements"].toArray());
 }
 
 QString Note::title() const
@@ -102,6 +105,16 @@ QDateTime Note::creationTime() const
 void Note::setCreationTime(const QDateTime &creationTime)
 {
     m_creationTime = creationTime;
+}
+
+QDateTime Note::deadlineTime() const
+{
+    return m_deadlineTime;
+}
+
+void Note::setDeadlineTime(const QDateTime &deadlineTime)
+{
+    m_deadlineTime = deadlineTime;
 }
 
 } // namespace deeper

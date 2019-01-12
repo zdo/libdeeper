@@ -4,7 +4,7 @@
 #include "Tag.hpp"
 #include "NoteState.hpp"
 #include "TimeTrack.hpp"
-#include "Achievement.hpp"
+#include "Milestone.hpp"
 #include "HavingParent.hpp"
 
 #include <QList>
@@ -15,6 +15,11 @@ namespace deeper {
 class Note : public Serializable, public HavingParent
 {
 public:
+    struct DateTimeWithDuration {
+        QDateTime dateTime;
+        int durationSeconds = 0;
+    };
+
     QJsonObject serializeToJson() const override;
     void deserializeFromJson(const QJsonObject &jsonRaw) override;
 
@@ -30,6 +35,9 @@ public:
     QDateTime creationTime() const;
     void setCreationTime(const QDateTime &creationTime);
 
+    QDateTime deadlineTime() const;
+    void setDeadlineTime(const QDateTime &deadlineTime);
+
 private:
     QDateTime m_creationTime;
     bool m_isArchived = false;
@@ -39,11 +47,8 @@ private:
     QString m_stateId = InvalidId;
     QList<QString> m_tagIdList;
 
-    QDateTime m_scheduledTime;
+    DateTimeWithDuration m_scheduledTime;
     QDateTime m_deadlineTime;
-
-    QList<TimeTrack> m_timeTracks;
-    QList<Achievement> m_achievements;
 };
 
 } // namespace deeper

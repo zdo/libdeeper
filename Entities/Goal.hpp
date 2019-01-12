@@ -22,10 +22,10 @@ private:
     QString m_title;
 
     bool m_isArchived = false;
-    int m_noteId = 0;
+    QString m_noteId = InvalidId;
     TimePeriod m_timePeriod = TimePeriod_Day;
 
-    int m_targetAchievementsCount = 0;
+    int m_targetMilestonesCount = 0;
     int m_targetMinutesTracked = 0;
 };
 

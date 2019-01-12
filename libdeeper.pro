@@ -16,9 +16,14 @@ contains(CONFIG, TESTME) {
     CONFIG += testcase
     QT += testlib
 
-    SOURCES += libdeeper_test.cpp
+    SOURCES += libdeeper_test.cpp \
+    Tests/TestHelper.cpp
 
-    HEADERS += Tests/DeeperTest.hpp
+    HEADERS += \
+    Tests/TimeTrackTest.hpp \
+    Tests/TestHelper.hpp \
+    Tests/BasicTest.hpp \
+    Tests/EntitiesTest.hpp
 
     RESOURCES += Tests/TestResources.qrc
 } else {
@@ -67,11 +72,10 @@ SOURCES += \
     Storage/StorageException.cpp \
     Storage/StorageLocalJsonFile.cpp \
     Entities/TimeTrack.cpp \
-    Entities/Achievement.cpp \
     Entities/Goal.cpp \
     Entities/HavingId.cpp \
-    Entities/DatabaseStuff/CategoryManager.cpp \
-    Entities/HavingParent.cpp
+    Entities/HavingParent.cpp \
+    Entities/Milestone.cpp
 
 HEADERS += \
         libdeeper.hpp \
@@ -82,14 +86,12 @@ HEADERS += \
     Entities/Serializable.hpp \
     Entities/Tag.hpp \
     Storage/AbstractStorage.hpp \
-    libdeeper.hpp \
     Storage/StorageFactory.hpp \
     Storage/StorageException.hpp \
     Storage/StorageLocalJsonFile.hpp \
     Entities/TimeTrack.hpp \
-    Entities/Achievement.hpp \
     Entities/Goal.hpp \
     Entities/HavingId.hpp \
-    Entities/DatabaseStuff/CategoryManager.hpp \
     Entities/HavingParent.hpp \
-    Entities/HavingParentTree.hpp
+    Entities/HavingParentTree.hpp \
+    Entities/Milestone.hpp

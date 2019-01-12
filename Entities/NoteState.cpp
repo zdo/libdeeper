@@ -50,4 +50,14 @@ void NoteState::setIsFinished(bool isFinished)
     m_isFinished = isFinished;
 }
 
+int NoteState::orderIndex() const
+{
+    return m_orderIndex;
+}
+
+void NoteState::setOrderIndex(int orderIndex)
+{
+    m_orderIndex = orderIndex;
+}
+
 } // namespace deeper

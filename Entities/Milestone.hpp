@@ -1,5 +1,5 @@
-#ifndef TIMETRACK_HPP
-#define TIMETRACK_HPP
+#ifndef MILESTONE_HPP
+#define MILESTONE_HPP
 
 #include "Serializable.hpp"
 #include "HavingId.hpp"
@@ -7,28 +7,27 @@
 
 namespace deeper {
 
-class TimeTrack : public Serializable, public HavingId
+class Milestone : public Serializable, public HavingId
 {
 public:
     QJsonObject serializeToJson() const override;
     void deserializeFromJson(const QJsonObject &jsonRaw) override;
 
-    QDateTime start() const;
-    void setStart(const QDateTime &start);
+    QDateTime creationTime() const;
+    void setCreationTime(const QDateTime &creationTime);
 
-    QDateTime end() const;
-    void setEnd(const QDateTime &end);
-
-    int durationInSeconds() const;
+    QString comment() const;
+    void setComment(const QString &comment);
 
     QString noteId() const;
     void setNoteId(const QString &noteId);
 
 private:
-    QDateTime m_start, m_end;
+    QDateTime m_creationTime;
     QString m_noteId;
+    QString m_comment;
 };
 
 } // namespace deeper
 
-#endif // TIMETRACK_HPP
+#endif // MILESTONE_HPP

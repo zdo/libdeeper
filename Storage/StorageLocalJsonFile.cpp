@@ -1,6 +1,7 @@
 #include "StorageLocalJsonFile.hpp"
 #include <QFile>
 #include <QJsonDocument>
+#include <cmath>
 
 namespace deeper {
 
@@ -49,7 +50,6 @@ StorageLocalJsonFile::StorageLocalJsonFile(const QString &path)
         m_root["tags"] = ArrayToObjectWithIdentifiableObjects(info.tags);
         m_root["goals"] = ArrayToObjectWithIdentifiableObjects(info.goals);
         m_root["noteStates"] = ArrayToObjectWithIdentifiableObjects(info.noteStates);
-        m_root["notes"] = QJsonObject();
 
         this->saveToFile();
     }
@@ -62,6 +62,8 @@ void StorageLocalJsonFile::clearAllData()
     m_root["goals"] = QJsonObject();
     m_root["noteStates"] = QJsonObject();
     m_root["notes"] = QJsonObject();
+    m_root["timeTracks"] = QJsonObject();
+    m_root["milestones"] = QJsonObject();
 
     this->saveToFile();
 }
@@ -92,6 +94,54 @@ void StorageLocalJsonFile::deleteNote(const QString &id)
     this->saveToFile();
 }
 
+QJsonObject StorageLocalJsonFile::activeTimeTrack()
+{
+    QJsonObject timeTracks = m_root["timeTracks"].toObject();
+    for (QJsonValue timeTrackRaw : timeTracks) {
+        auto timeTrack = timeTrackRaw.toObject();
+        if (fabs(timeTrack["end"].toDouble()) <= 1.0) {
+            return timeTrack;
+        }
+    }
+
+    return QJsonObject();
+}
+
+QJsonArray StorageLocalJsonFile::timeTracksForNote(const QString &noteId)
+{
+    QJsonArray result;
+    QJsonObject timeTracks = m_root["timeTracks"].toObject();
+    for (QJsonValue timeTrackRaw : timeTracks) {
+        auto timeTrack = timeTrackRaw.toObject();
+        if (timeTrack["noteId"].toString() == noteId) {
+            result.append(timeTrack);
+        }
+    }
+
+    return result;
+}
+
+void StorageLocalJsonFile::saveTimeTrack(const QJsonObject &tt)
+{
+    QJsonObject timeTracks = m_root["timeTracks"].toObject();
+    timeTracks[tt["id"].toString()] = tt;
+    m_root["timeTracks"] = timeTracks;
+    this->saveToFile();
+}
+
+void StorageLocalJsonFile::deleteTimeTrack(const QString &id)
+{
+    QJsonObject timeTracks = m_root["timeTracks"].toObject();
+    timeTracks.remove(id);
+    m_root["timeTracks"] = timeTracks;
+    this->saveToFile();
+}
+
+const QString &StorageLocalJsonFile::path() const
+{
+    return m_path;
+}
+
 void StorageLocalJsonFile::saveCategory(const QJsonObject &json)
 {
     QJsonObject obj = m_root["categories"].toObject();
@@ -120,6 +170,18 @@ QJsonArray StorageLocalJsonFile::notes(const QString &categoryId)
         }
     }
     return notesResult;
+}
+
+QJsonObject StorageLocalJsonFile::note(const QString &id)
+{
+    auto notes = m_root["notes"].toObject();
+    for (auto noteRaw : notes) {
+        auto note = noteRaw.toObject();
+        if (note["id"].toString() == id) {
+            return note;
+        }
+    }
+    throw StorageException(QObject::tr("No such note with id \"%1\"").arg(id));
 }
 
 void StorageLocalJsonFile::saveToFile()

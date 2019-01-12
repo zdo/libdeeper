@@ -36,6 +36,7 @@ public:
 
     // Notes.
     QSharedPointer<HavingParentTree<Note>> notes(const QSharedPointer<Category> &category);
+    QSharedPointer<Note> note(const QString &id);
     QSharedPointer<Note> createNote(const QSharedPointer<Category> &category,
                                     const QSharedPointer<Note> &parentNote = nullptr);
     void saveNote(const QSharedPointer<Note> &note);
@@ -43,6 +44,14 @@ public:
     bool setNoteParent(const QSharedPointer<Note> &note, const QSharedPointer<Category> &category,
                        const QSharedPointer<Note> &parentNote, int index = -1);
 
+    // Track time.
+    QSharedPointer<TimeTrack> activeTimeTrack();
+    QList<QSharedPointer<TimeTrack>> timeTracksForNote(const QSharedPointer<Note> &note);
+    QSharedPointer<TimeTrack> startTimeTrack(const QSharedPointer<Note> &note);
+    void saveTimeTrack(const QSharedPointer<TimeTrack> &tt);
+    void deleteTimeTrack(const QSharedPointer<TimeTrack> &tt);
+
+    // Note states.
     const QList<QSharedPointer<NoteState>> & noteStates() const;
 
 private:
@@ -53,7 +62,11 @@ private:
     QList<QSharedPointer<NoteState>> m_noteStates;
     QList<QSharedPointer<Goal>> m_goals;
 
+    QMap<QString, QSharedPointer<Note>> m_notes;
     QMap<QString, QSharedPointer<HavingParentTree<Note>>> m_notesPerCategoryId;
+
+    QMap<QString, QSharedPointer<TimeTrack>> m_timeTracks;
+    QSharedPointer<TimeTrack> obtainAndUpdateTimeTrack(const QJsonValue &jsonRaw);
 
     void clear();
 };

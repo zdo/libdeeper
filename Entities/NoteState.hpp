@@ -21,9 +21,13 @@ public:
     bool isFinished() const;
     void setIsFinished(bool isFinished);
 
+    int orderIndex() const;
+    void setOrderIndex(int orderIndex);
+
 private:
     QString m_title;
     QString m_color;
+    int m_orderIndex = 0;
     bool m_isFinished = false;
 };
 
