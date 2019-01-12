@@ -5,7 +5,7 @@
 #-------------------------------------------------
 
 QT       -= gui
-QT       += core concurrent
+QT       += core
 
 # Enable to test.
 # CONFIG += TESTME
