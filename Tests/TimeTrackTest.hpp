@@ -51,6 +51,25 @@ private slots:
         QVERIFY(tt1->end().isValid());
         QCOMPARE(tt1->durationInSeconds(), durationSeconds);
     }
+
+    void timeTrack2()
+    {
+        auto db = createDatabaseFromTemplate();
+        auto root = db->categories()->rootObjects().first();
+        auto note = db->createNote(root);
+
+        auto tt1 = db->startTimeTrack(note);
+        tt1->setStart(QDateTime::currentDateTime().addSecs(-30));
+        tt1->setEndToNow();
+        db->saveTimeTrack(tt1);
+
+        auto tt2 = db->startTimeTrack(note);
+        tt2->setStart(QDateTime::currentDateTime().addSecs(-20));
+        tt2->setEndToNow();
+        db->saveTimeTrack(tt2);
+
+        QCOMPARE(db->noteTotalDuration(note).seconds, 50);
+    }
 };
 
 #endif // TIMETRACKTEST_HPP

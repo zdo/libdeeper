@@ -1,21 +1,23 @@
 #ifndef TIMETRACK_HPP
 #define TIMETRACK_HPP
 
-#include "Serializable.hpp"
-#include "HavingId.hpp"
+#include "./Helpers/HavingId.hpp"
 #include <QDateTime>
 
 namespace deeper {
 
-class TimeTrack : public Serializable, public HavingId
+class TimeTrack : public HavingId
 {
 public:
     struct Duration {
-        int hours = 0, minutes = 0, seconds = 0;
-    };
+        int days = 0;
+        int hours = 0;
+        int minutes = 0;
+        int seconds = 0;
 
-    QJsonObject serializeToJson() const override;
-    void deserializeFromJson(const QJsonObject &jsonRaw) override;
+        Duration(int totalSeconds);
+        QString toString() const;
+    };
 
     QDateTime start() const;
     void setStart(const QDateTime &start);
@@ -27,12 +29,12 @@ public:
     int durationInSeconds() const;
     Duration duration() const;
 
-    QString noteId() const;
-    void setNoteId(const QString &noteId);
+    int noteId() const;
+    void setNoteId(const int &noteId);
 
 private:
     QDateTime m_start, m_end;
-    QString m_noteId;
+    int m_noteId;
 };
 
 } // namespace deeper

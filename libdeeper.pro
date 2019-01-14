@@ -5,10 +5,11 @@
 #-------------------------------------------------
 
 QT       -= gui
-QT       += core
+QT       += core sql
+QTPLUGIN += QSQLITE
 
 # Enable to test.
-# CONFIG += TESTME
+ CONFIG += TESTME
 
 contains(CONFIG, TESTME) {
     message("Test")
@@ -20,10 +21,12 @@ contains(CONFIG, TESTME) {
     Tests/TestHelper.cpp
 
     HEADERS += \
-    Tests/TimeTrackTest.hpp \
     Tests/TestHelper.hpp \
-    Tests/BasicTest.hpp \
-    Tests/EntitiesTest.hpp
+    Tests/LocalSqliteBackendTest.hpp
+    # Tests/TimeTrackTest.hpp \
+    # Tests/BasicTest.hpp \
+    # Tests/EntitiesTest.hpp \
+    # Tests/FilterTest.hpp
 
     RESOURCES += Tests/TestResources.qrc
 } else {
@@ -63,35 +66,37 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += \
     Entities/Category.cpp \
-    Entities/Database.cpp \
     Entities/Note.cpp \
     Entities/NoteState.cpp \
     Entities/Tag.cpp \
-    Storage/AbstractStorage.cpp \
-    Storage/StorageFactory.cpp \
-    Storage/StorageException.cpp \
-    Storage/StorageLocalJsonFile.cpp \
     Entities/TimeTrack.cpp \
     Entities/Goal.cpp \
-    Entities/HavingId.cpp \
-    Entities/HavingParent.cpp \
-    Entities/Milestone.cpp
+    Entities/Helpers/HavingId.cpp \
+    Entities/Helpers/HavingParent.cpp \
+    Entities/Milestone.cpp \
+    Overview/TimeTable.cpp \
+    Overview/Filter.cpp \
+    Entities/Book.cpp \
+    Backend/AbstractBackend.cpp \
+    Backend/BackendFactory.cpp \
+    Backend/LocalSqliteBackend.cpp
 
 HEADERS += \
         libdeeper.hpp \
     Entities/Category.hpp \
-    Entities/Database.hpp \
     Entities/Note.hpp \
     Entities/NoteState.hpp \
-    Entities/Serializable.hpp \
     Entities/Tag.hpp \
-    Storage/AbstractStorage.hpp \
-    Storage/StorageFactory.hpp \
-    Storage/StorageException.hpp \
-    Storage/StorageLocalJsonFile.hpp \
     Entities/TimeTrack.hpp \
     Entities/Goal.hpp \
-    Entities/HavingId.hpp \
-    Entities/HavingParent.hpp \
-    Entities/HavingParentTree.hpp \
-    Entities/Milestone.hpp
+    Entities/Helpers/HavingId.hpp \
+    Entities/Helpers/HavingParent.hpp \
+    Entities/Helpers/HavingParentTree.hpp \
+    Entities/Milestone.hpp \
+    Overview/TimeTable.hpp \
+    Overview/Filter.hpp \
+    Overview/CustomFilters.hpp \
+    Entities/Book.hpp \
+    Backend/AbstractBackend.hpp \
+    Backend/BackendFactory.hpp \
+    Backend/LocalSqliteBackend.hpp

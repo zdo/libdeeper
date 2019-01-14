@@ -1,12 +1,12 @@
 #ifndef GOAL_HPP
 #define GOAL_HPP
 
-#include "Serializable.hpp"
-#include "HavingId.hpp"
+#include "./Helpers/HavingId.hpp"
+#include <QString>
 
 namespace deeper {
 
-class Goal : public Serializable, public HavingId
+class Goal : public HavingId
 {
 public:
     enum TimePeriod {
@@ -15,14 +15,11 @@ public:
         TimePeriod_Month
     };
 
-    QJsonObject serializeToJson() const override;
-    void deserializeFromJson(const QJsonObject &jsonRaw) override;
-
 private:
     QString m_title;
 
     bool m_isArchived = false;
-    QString m_noteId = InvalidId;
+    int m_noteId = InvalidId;
     TimePeriod m_timePeriod = TimePeriod_Day;
 
     int m_targetMilestonesCount = 0;

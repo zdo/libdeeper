@@ -6,36 +6,33 @@
 #include "Tag.hpp"
 #include "Note.hpp"
 #include "Goal.hpp"
-#include "HavingParentTree.hpp"
 
-#include "../Storage/AbstractStorage.hpp"
+#include "../Overview/Filter.hpp"
+#include "../Backend/AbstractBackend.hpp"
 #include <QSharedPointer>
 
 namespace deeper {
 
-class Database
+class Book
 {
 public:
-    Database(const QUrl &url);
-    Database(QSharedPointer<AbstractStorage> storage);
-
-    // Storage.
-    void switchAndOverwriteStorage(QSharedPointer<AbstractStorage> storage);
-    void refresh();
+    Book(const QString &path);
 
     // Tags.
     QList<QSharedPointer<Tag>> tags();
 
     // Categories.
-    QSharedPointer<HavingParentTree<Category>> categories();
-
+    QList<QSharedPointer<Category>> rootCategories();
     QSharedPointer<Category> createCategory(const QSharedPointer<Category> &parent = nullptr);
     void saveCategory(const QSharedPointer<Category> &category);
     void deleteCategory(const QSharedPointer<Category> &category);
-    bool setCategoryParent(const QSharedPointer<Category> &category, const QSharedPointer<Category> &parentCategory, int index = -1);
+    bool setCategoryParent(const QSharedPointer<Category> &category,
+                           const QSharedPointer<Category> &parentCategory,
+                           int index = -1);
 
     // Notes.
-    QSharedPointer<HavingParentTree<Note>> notes(const QSharedPointer<Category> &category);
+    QList<QSharedPointer<Note>> rootNotes(const QSharedPointer<Category> &category,
+                                          const QSharedPointer<Filter> &filter = nullptr);
     QSharedPointer<Note> note(const QString &id);
     QSharedPointer<Note> createNote(const QSharedPointer<Category> &category,
                                     const QSharedPointer<Note> &parentNote = nullptr);
@@ -50,25 +47,13 @@ public:
     QSharedPointer<TimeTrack> startTimeTrack(const QSharedPointer<Note> &note);
     void saveTimeTrack(const QSharedPointer<TimeTrack> &tt);
     void deleteTimeTrack(const QSharedPointer<TimeTrack> &tt);
+    TimeTrack::Duration noteTotalDuration(const QSharedPointer<Note> &note);
 
     // Note states.
     const QList<QSharedPointer<NoteState>> & noteStates() const;
 
 private:
-    QSharedPointer<AbstractStorage> m_storage;
-
-    QSharedPointer<HavingParentTree<Category>> m_categories;
-    QList<QSharedPointer<Tag>> m_tags;
-    QList<QSharedPointer<NoteState>> m_noteStates;
-    QList<QSharedPointer<Goal>> m_goals;
-
-    QMap<QString, QSharedPointer<Note>> m_notes;
-    QMap<QString, QSharedPointer<HavingParentTree<Note>>> m_notesPerCategoryId;
-
-    QMap<QString, QSharedPointer<TimeTrack>> m_timeTracks;
-    QSharedPointer<TimeTrack> obtainAndUpdateTimeTrack(const QJsonValue &jsonRaw);
-
-    void clear();
+    QSharedPointer<AbstractBackend> m_storage;
 };
 
 } // namespace deeper

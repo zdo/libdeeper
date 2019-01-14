@@ -1,17 +1,14 @@
 #ifndef NOTESTATE_HPP
 #define NOTESTATE_HPP
 
-#include "Serializable.hpp"
-#include "HavingId.hpp"
+#include "./Helpers/HavingId.hpp"
+#include <QString>
 
 namespace deeper {
 
-class NoteState : public Serializable, public HavingId
+class NoteState : public HavingId
 {
 public:
-    QJsonObject serializeToJson() const override;
-    void deserializeFromJson(const QJsonObject &jsonRaw) override;
-
     QString title() const;
     void setTitle(const QString &title);
 

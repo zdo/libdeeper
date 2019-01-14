@@ -9,8 +9,8 @@ namespace deeper {
 class HavingParent : public HavingId
 {
 public:
-    QString parentId() const;
-    void setParentId(const QString &parentId);
+    int parentId() const;
+    void setParentId(const int &parentId);
 
     int orderIndex() const;
     void setOrderIndex(int orderIndex);
@@ -19,7 +19,7 @@ public:
     bool hasParent() const { return !this->isRoot(); }
 
 protected:
-    QString m_parentId = InvalidId;
+    int m_parentId = InvalidId;
     int m_orderIndex = 0;
 };
 

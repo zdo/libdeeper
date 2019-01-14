@@ -1,7 +1,0 @@
-{
-    "id": "someid",
-    "title": "Имя категории",
-    "parentId": "someparent",
-    "orderIndex": 100500,
-    "tags": ["1", "2"]
-}

@@ -2,12 +2,12 @@
 
 namespace deeper {
 
-QString HavingParent::parentId() const
+int HavingParent::parentId() const
 {
     return m_parentId;
 }
 
-void HavingParent::setParentId(const QString &parentId)
+void HavingParent::setParentId(const int &parentId)
 {
     m_parentId = parentId;
 }

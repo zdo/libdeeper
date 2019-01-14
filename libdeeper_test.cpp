@@ -1,6 +1,9 @@
-#include "Tests/EntitiesTest.hpp"
-#include "Tests/BasicTest.hpp"
-#include "Tests/TimeTrackTest.hpp"
+//#include "Tests/EntitiesTest.hpp"
+//#include "Tests/BasicTest.hpp"
+//#include "Tests/TimeTrackTest.hpp"
+//#include "Tests/FilterTest.hpp"
+
+#include "Tests/LocalSqliteBackendTest.hpp"
 
 int main(int argc, char *argv[])
 {
@@ -8,9 +11,11 @@ int main(int argc, char *argv[])
     app.setAttribute(Qt::AA_Use96Dpi, true);
 
     QList<QObject *> tests = {
-        new EntitiesTest,
-        new BasicTest,
-        new TimeTrackTest
+        new LocalSqliteBackendTest,
+//        new EntitiesTest,
+//        new BasicTest,
+//        new TimeTrackTest,
+//        new FilterTest
     };
     for (auto test : tests) {
         test->setParent(&app);

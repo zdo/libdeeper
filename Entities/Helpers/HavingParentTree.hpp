@@ -31,7 +31,7 @@ public:
 
     QList<QSharedPointer<T>> children(QSharedPointer<T> parent)
     {
-        QString parentId = HavingId::InvalidId;
+        int parentId = HavingId::InvalidId;
         if (!parent.isNull()) {
             parentId = parent->id();
         }
@@ -183,7 +183,7 @@ protected:
     }
 
 private:
-    QMap<QString, QSharedPointer<T>> m_objectPerId;
+    QMap<int, QSharedPointer<T>> m_objectPerId;
 
     void allDeepChildren_r(const QSharedPointer<T> &parent, QList<QSharedPointer<T>> &list)
     {

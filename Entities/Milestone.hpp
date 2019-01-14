@@ -1,30 +1,26 @@
 #ifndef MILESTONE_HPP
 #define MILESTONE_HPP
 
-#include "Serializable.hpp"
-#include "HavingId.hpp"
+#include "./Helpers/HavingId.hpp"
 #include <QDateTime>
 
 namespace deeper {
 
-class Milestone : public Serializable, public HavingId
+class Milestone : public HavingId
 {
 public:
-    QJsonObject serializeToJson() const override;
-    void deserializeFromJson(const QJsonObject &jsonRaw) override;
-
     QDateTime creationTime() const;
     void setCreationTime(const QDateTime &creationTime);
 
     QString comment() const;
     void setComment(const QString &comment);
 
-    QString noteId() const;
-    void setNoteId(const QString &noteId);
+    int noteId() const;
+    void setNoteId(const int &noteId);
 
 private:
     QDateTime m_creationTime;
-    QString m_noteId;
+    int m_noteId;
     QString m_comment;
 };
 

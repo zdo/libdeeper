@@ -2,37 +2,6 @@
 
 namespace deeper {
 
-QJsonObject TimeTrack::serializeToJson() const
-{
-    QJsonObject json;
-
-    Q_ASSERT(this->m_start.isValid());
-    json["id"] = m_id;
-    json["noteId"] = m_noteId;
-    json["start"] = double(this->m_start.toSecsSinceEpoch());
-
-    if (this->m_end.isValid()) {
-        json["end"] = double(this->m_end.toSecsSinceEpoch());
-    } else {
-        json["end"] = 0.0;
-    }
-    return json;
-}
-
-void TimeTrack::deserializeFromJson(const QJsonObject &json)
-{
-    m_id = json["id"].toString();
-    m_noteId = json["noteId"].toString();
-    m_start = QDateTime::fromSecsSinceEpoch(qint64(json["start"].toDouble()));
-
-    double endTime = json["end"].toDouble();
-    if (endTime > 0.0) {
-        m_end = QDateTime::fromSecsSinceEpoch(qint64(endTime));
-    } else {
-        m_end = QDateTime();
-    }
-}
-
 QDateTime TimeTrack::start() const
 {
     return m_start;
@@ -74,32 +43,56 @@ int TimeTrack::durationInSeconds() const
 
 TimeTrack::Duration TimeTrack::duration() const
 {
-    Duration d;
-    d.seconds = this->durationInSeconds();
-
-    int minutes = d.seconds / 60;
-    if (minutes > 0) {
-        d.minutes = minutes;
-        d.seconds -= d.minutes * 60;
-
-        int hours = d.minutes / 60;
-        if (hours > 0) {
-            d.hours = hours;
-            d.minutes -= d.hours * 60;
-        }
-    }
-
+    Duration d(this->durationInSeconds());
     return d;
 }
 
-QString TimeTrack::noteId() const
+int TimeTrack::noteId() const
 {
     return m_noteId;
 }
 
-void TimeTrack::setNoteId(const QString &noteId)
+void TimeTrack::setNoteId(const int &noteId)
 {
     m_noteId = noteId;
+}
+
+TimeTrack::Duration::Duration(int totalSeconds)
+{
+    this->seconds = totalSeconds;
+
+    int minutesNew = this->seconds / 60;
+    if (minutesNew > 0) {
+        this->minutes = minutesNew;
+        this->seconds -= this->minutes * 60;
+
+        int hoursNew = this->minutes / 60;
+        if (hoursNew > 0) {
+            this->hours = hoursNew;
+            this->minutes -= this->hours * 60;
+
+            int daysNew = this->hours / 24;
+            if (daysNew > 0) {
+                this->days = daysNew;
+                this->hours -= this->days * 24;
+            }
+        }
+    }
+}
+
+QString TimeTrack::Duration::toString() const
+{
+    QString str;
+    if (days > 0) {
+        str = QString("%1d %2h %3m").arg(days).arg(hours).arg(minutes);
+    } else if (hours > 0) {
+        str = QString("%1h %2m").arg(hours).arg(minutes);
+    } else if (minutes > 0) {
+        str = QString("%1m").arg(minutes);
+    } else {
+        str = QString("%1s").arg(seconds);
+    }
+    return str;
 }
 
 } // namespace deeper

@@ -2,17 +2,13 @@
 #define TAG_HPP
 
 #include <QString>
-#include "Serializable.hpp"
-#include "HavingId.hpp"
+#include "./Helpers/HavingId.hpp"
 
 namespace deeper {
 
-class Tag : public Serializable, public HavingId
+class Tag :  public HavingId
 {
 public:
-    QJsonObject serializeToJson() const override;
-    void deserializeFromJson(const QJsonObject &jsonRaw) override;
-
     QString title() const;
     void setTitle(const QString &title);
 

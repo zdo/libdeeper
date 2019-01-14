@@ -1,28 +1,22 @@
 #ifndef CATEGORY_HPP
 #define CATEGORY_HPP
 
-#include "Serializable.hpp"
-#include "HavingParent.hpp"
-#include <QList>
+#include "./Helpers/HavingParent.hpp"
+#include <QString>
+#include <QSharedPointer>
 
 namespace deeper {
 
-class Category : public Serializable, public HavingParent
+class Category : public HavingParent
 {
 public:
-    QJsonObject serializeToJson() const override;
-    void deserializeFromJson(const QJsonObject &jsonRaw) override;
-
     QString title() const;
     void setTitle(const QString &title);
 
-    QList<QString> tagIdList() const;
-    void setTagIdList(const QList<QString> &tagIdList);
+    QSharedPointer<Category> parent();
 
 private:
-    QList<QString> m_childrenIds;
     QString m_title;
-    QList<QString> m_tagIdList;
 };
 
 } // namespace deeper
