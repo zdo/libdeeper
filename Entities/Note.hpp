@@ -5,14 +5,14 @@
 #include "NoteState.hpp"
 #include "TimeTrack.hpp"
 #include "Milestone.hpp"
-#include "./Helpers/HavingParent.hpp"
+#include "./Helpers/BackendFamilyEntity.hpp"
 
 #include <QList>
 #include <QDateTime>
 
 namespace deeper {
 
-class Note : public HavingParent
+class Note : public BackendFamilyEntity
 {
 public:
     struct DateTimeWithDuration {

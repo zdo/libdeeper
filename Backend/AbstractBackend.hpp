@@ -18,16 +18,13 @@ public:
 
     // Categories.
     virtual QList<QSharedPointer<Category>> rootCategories() = 0;
-    virtual QList<QSharedPointer<Category>> childrenCategories(const QSharedPointer<Category> &parent) = 0;
-    virtual int childrenCategoriesCount(const QSharedPointer<Category> &parent) = 0;
-    virtual QSharedPointer<Category> createCategory(const QSharedPointer<Category> &parent = nullptr) = 0;
-    virtual QSharedPointer<Category> category(int id) = 0;
-    virtual void saveCategory(const QSharedPointer<Category> &category) = 0;
-    virtual void deleteCategory(const QSharedPointer<Category> &category) = 0;
-
-    virtual QList<QSharedPointer<Tag>> categoryTags(const QSharedPointer<Category> &category) = 0;
-    virtual void addCategoryTag(const QSharedPointer<Category> &category, const QSharedPointer<Tag> &tag) = 0;
-    virtual void removeCategoryTag(const QSharedPointer<Category> &category, const QSharedPointer<Tag> &tag) = 0;
+    virtual QList<QSharedPointer<Category>> categoryChildren(int parentId = BackendEntity::InvalidId) = 0;
+    virtual int categoryChildrenCount(int parentId = BackendEntity::InvalidId) = 0;
+    virtual QSharedPointer<Category> createCategory(int parentId = BackendEntity::InvalidId) = 0;
+    virtual QSharedPointer<Category> categoryWithId(int id) = 0;
+    virtual void saveCategory(int id) = 0;
+    virtual void removeCategory(int id) = 0;
+    virtual void moveCategory(int id, int newParentId, int index = -1) = 0;
 };
 
 } // namespace deeper

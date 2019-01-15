@@ -1,7 +1,7 @@
 #ifndef HAVINGPARENTTREE_HPP
 #define HAVINGPARENTTREE_HPP
 
-#include "HavingParent.hpp"
+#include "BackendFamilyEntity.hpp"
 #include <QSharedPointer>
 #include <type_traits>
 
@@ -11,7 +11,7 @@ template<typename T>
 class HavingParentTree
 {
 public:
-    static_assert (std::is_base_of<HavingParent, T>::value, "T must inherit from HavingParent");
+    static_assert (std::is_base_of<BackendFamilyEntity, T>::value, "T must inherit from HavingParent");
 
 
     QList<QSharedPointer<T>> rootObjects()
@@ -31,7 +31,7 @@ public:
 
     QList<QSharedPointer<T>> children(QSharedPointer<T> parent)
     {
-        int parentId = HavingId::InvalidId;
+        int parentId = BackendEntity::InvalidId;
         if (!parent.isNull()) {
             parentId = parent->id();
         }
@@ -110,7 +110,7 @@ protected:
         // Determine old and new parents' ids.
         auto oldParentId = o->parentId();
 
-        auto newParentId = HavingId::InvalidId;
+        auto newParentId = BackendEntity::InvalidId;
         if (!newParent.isNull()) {
             newParentId = newParent->id();
         }

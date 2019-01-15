@@ -1,12 +1,12 @@
 #ifndef MILESTONE_HPP
 #define MILESTONE_HPP
 
-#include "./Helpers/HavingId.hpp"
+#include "./Helpers/BackendEntity.hpp"
 #include <QDateTime>
 
 namespace deeper {
 
-class Milestone : public HavingId
+class Milestone : public BackendEntity
 {
 public:
     QDateTime creationTime() const;

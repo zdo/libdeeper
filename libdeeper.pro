@@ -27,8 +27,6 @@ contains(CONFIG, TESTME) {
     # Tests/BasicTest.hpp \
     # Tests/EntitiesTest.hpp \
     # Tests/FilterTest.hpp
-
-    RESOURCES += Tests/TestResources.qrc
 } else {
     TEMPLATE = lib
     TARGET = deeper
@@ -71,15 +69,15 @@ SOURCES += \
     Entities/Tag.cpp \
     Entities/TimeTrack.cpp \
     Entities/Goal.cpp \
-    Entities/Helpers/HavingId.cpp \
-    Entities/Helpers/HavingParent.cpp \
     Entities/Milestone.cpp \
     Overview/TimeTable.cpp \
     Overview/Filter.cpp \
     Entities/Book.cpp \
     Backend/AbstractBackend.cpp \
     Backend/BackendFactory.cpp \
-    Backend/LocalSqliteBackend.cpp
+    Backend/LocalSqliteBackend.cpp \
+    Entities/Helpers/BackendEntity.cpp \
+    Entities/Helpers/BackendFamilyEntity.cpp
 
 HEADERS += \
         libdeeper.hpp \
@@ -89,8 +87,6 @@ HEADERS += \
     Entities/Tag.hpp \
     Entities/TimeTrack.hpp \
     Entities/Goal.hpp \
-    Entities/Helpers/HavingId.hpp \
-    Entities/Helpers/HavingParent.hpp \
     Entities/Helpers/HavingParentTree.hpp \
     Entities/Milestone.hpp \
     Overview/TimeTable.hpp \
@@ -99,4 +95,6 @@ HEADERS += \
     Entities/Book.hpp \
     Backend/AbstractBackend.hpp \
     Backend/BackendFactory.hpp \
-    Backend/LocalSqliteBackend.hpp
+    Backend/LocalSqliteBackend.hpp \
+    Entities/Helpers/BackendEntity.hpp \
+    Entities/Helpers/BackendFamilyEntity.hpp

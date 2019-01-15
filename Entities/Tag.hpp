@@ -2,11 +2,11 @@
 #define TAG_HPP
 
 #include <QString>
-#include "./Helpers/HavingId.hpp"
+#include "./Helpers/BackendEntity.hpp"
 
 namespace deeper {
 
-class Tag :  public HavingId
+class Tag :  public BackendEntity
 {
 public:
     QString title() const;

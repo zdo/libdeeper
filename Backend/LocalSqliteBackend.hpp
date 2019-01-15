@@ -13,20 +13,22 @@ class LocalSqliteBackend : public AbstractBackend
 {
 public:
     LocalSqliteBackend(const QString &path);
+    ~LocalSqliteBackend() override;
     const QString & path() const { return m_path; }
 
     // Categories.
     QList<QSharedPointer<Category>> rootCategories() override;
-    QList<QSharedPointer<Category>> childrenCategories(const QSharedPointer<Category> &parent) override;
-    int childrenCategoriesCount(const QSharedPointer<Category> &parent) override;
-    QSharedPointer<Category> createCategory(const QSharedPointer<Category> &parent = nullptr) override;
-    QSharedPointer<Category> category(int id) override;
-    void saveCategory(const QSharedPointer<Category> &category) override;
-    void deleteCategory(const QSharedPointer<Category> &category) override;
+    QList<QSharedPointer<Category>> categoryChildren(int parentId = BackendEntity::InvalidId) override;
+    int categoryChildrenCount(int parentId = BackendEntity::InvalidId) override;
+    QSharedPointer<Category> createCategory(int parentId = BackendEntity::InvalidId) override;
+    QSharedPointer<Category> categoryWithId(int id) override;
+    void saveCategory(int id) override;
+    void removeCategory(int id) override;
+    void moveCategory(int id, int newParentId, int index = -1) override;
 
-//    QList<QSharedPointer<Tag>> categoryTags(const QSharedPointer<Category> &category) override;
-//    void addCategoryTag(const QSharedPointer<Category> &category, const QSharedPointer<Tag> &tag) override;
-//    void removeCategoryTag(const QSharedPointer<Category> &category, const QSharedPointer<Tag> &tag) override;
+//    QList<QSharedPointer<Tag>> categoryTags(Category *category) override;
+//    void addCategoryTag(Category *category, const QSharedPointer<Tag> &tag) override;
+//    void removeCategoryTag(Category *category, const QSharedPointer<Tag> &tag) override;
 
 
 private:
@@ -42,6 +44,13 @@ private:
 
     QSqlQuery prepare(const QString &s);
     void exec(QSqlQuery &q);
+    void exec(const QString &q);
+
+    void bindIdOrNull(QSqlQuery &q, const QString &id, int value);
+    void bindEntityIdOrNull(QSqlQuery &q, const QString &id, BackendEntity *ptr);
+    void removeCategoryAndChildren_r(int id);
+    QList<int> getAllDeepCategoryChildrenIds(int id);
+    void doInTransaction(std::function<void ()> fn);
 };
 
 } // namespace deeper

@@ -1,12 +1,12 @@
 #ifndef NOTESTATE_HPP
 #define NOTESTATE_HPP
 
-#include "./Helpers/HavingId.hpp"
+#include "./Helpers/BackendEntity.hpp"
 #include <QString>
 
 namespace deeper {
 
-class NoteState : public HavingId
+class NoteState : public BackendEntity
 {
 public:
     QString title() const;

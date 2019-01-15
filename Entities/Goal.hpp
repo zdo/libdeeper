@@ -1,12 +1,12 @@
 #ifndef GOAL_HPP
 #define GOAL_HPP
 
-#include "./Helpers/HavingId.hpp"
+#include "./Helpers/BackendEntity.hpp"
 #include <QString>
 
 namespace deeper {
 
-class Goal : public HavingId
+class Goal : public BackendEntity
 {
 public:
     enum TimePeriod {

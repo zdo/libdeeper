@@ -11,12 +11,31 @@ QString Category::title() const
 void Category::setTitle(const QString &title)
 {
     m_title = title;
-
 }
 
 QSharedPointer<Category> Category::parent()
 {
-    this->getBackendOrThrowError()->category(m_parentId);
+    return this->getBackendOrError()->categoryWithId(m_parentId);
+}
+
+QList<QSharedPointer<Category>> Category::children()
+{
+    return this->getBackendOrError()->categoryChildren(this->id());
+}
+
+void Category::save()
+{
+    this->getBackendOrError()->saveCategory(this->id());
+}
+
+void Category::remove()
+{
+    this->getBackendOrError()->removeCategory(this->id());
+}
+
+void Category::move(const QSharedPointer<Category> &newParent, int index)
+{
+    this->getBackendOrError()->moveCategory(this->id(), newParent.isNull() ? InvalidId : newParent->id(), index);
 }
 
 } // namespace deeper

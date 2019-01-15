@@ -5,19 +5,24 @@ namespace deeper {
 
 class AbstractBackend;
 
-class HavingId {
+class BackendEntity {
 public:
-    static const int InvalidId = 0;
+    static const int InvalidId;
+
+    virtual ~BackendEntity() {}
 
     const int & id() const { return m_id; }
     void setId(int id);
 
+    virtual void save() = 0;
+    void __setBackend(AbstractBackend *backend);
+
 protected:
-    AbstractBackend * getBackendOrThrowError() const;
+    friend class AbstractBackend;
+
+    AbstractBackend * getBackendOrError() const;
 
 private:
-    friend AbstractBackend;
-
     AbstractBackend *m_backend = nullptr;
 
     int m_id = InvalidId;

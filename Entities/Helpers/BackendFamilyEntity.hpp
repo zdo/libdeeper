@@ -1,12 +1,12 @@
 #ifndef HAVINGPARENT_HPP
 #define HAVINGPARENT_HPP
 
-#include "HavingId.hpp"
+#include "BackendEntity.hpp"
 #include <QMap>
 
 namespace deeper {
 
-class HavingParent : public HavingId
+class BackendFamilyEntity : public BackendEntity
 {
 public:
     int parentId() const;

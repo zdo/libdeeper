@@ -1,12 +1,12 @@
 #ifndef TIMETRACK_HPP
 #define TIMETRACK_HPP
 
-#include "./Helpers/HavingId.hpp"
+#include "./Helpers/BackendEntity.hpp"
 #include <QDateTime>
 
 namespace deeper {
 
-class TimeTrack : public HavingId
+class TimeTrack : public BackendEntity
 {
 public:
     struct Duration {
