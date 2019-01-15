@@ -3,6 +3,11 @@
 
 #include "../Entities/Category.hpp"
 #include "../Entities/Tag.hpp"
+#include "../Entities/Goal.hpp"
+#include "../Entities/Milestone.hpp"
+#include "../Entities/Note.hpp"
+#include "../Entities/NoteState.hpp"
+#include "../Entities/TimeTrack.hpp"
 
 #include <QUrl>
 
@@ -25,6 +30,19 @@ public:
     virtual void saveCategory(int id) = 0;
     virtual void removeCategory(int id) = 0;
     virtual void moveCategory(int id, int newParentId, int index = -1) = 0;
+
+    // Tags.
+    virtual QSharedPointer<Tag> createTag(const QString &title) = 0;
+    virtual QList<QSharedPointer<Tag>> tags() = 0;
+    virtual QSharedPointer<Tag> tagWithId(int id) = 0;
+    virtual void saveTag(int id) = 0;
+    virtual void removeTag(int id) = 0;
+
+    // Categories + tags.
+    virtual QList<QSharedPointer<Tag>> tagsForCategory(int categoryId) = 0;
+    virtual void assignTagToCategory(int categoryId, int tagId) = 0;
+    virtual void removeTagFromCategory(int categoryId, int tagId) = 0;
+
 };
 
 } // namespace deeper

@@ -26,10 +26,17 @@ public:
     void removeCategory(int id) override;
     void moveCategory(int id, int newParentId, int index = -1) override;
 
-//    QList<QSharedPointer<Tag>> categoryTags(Category *category) override;
-//    void addCategoryTag(Category *category, const QSharedPointer<Tag> &tag) override;
-//    void removeCategoryTag(Category *category, const QSharedPointer<Tag> &tag) override;
+    // Tags.
+    QSharedPointer<Tag> createTag(const QString &title) override;
+    QList<QSharedPointer<Tag>> tags() override;
+    QSharedPointer<Tag> tagWithId(int id) override;
+    void saveTag(int id) override;
+    void removeTag(int id) override;
 
+    // Categories + tags.
+    QList<QSharedPointer<Tag>> tagsForCategory(int categoryId) override;
+    void assignTagToCategory(int categoryId, int tagId) override;
+    void removeTagFromCategory(int categoryId, int tagId) override;
 
 private:
     QString m_path;
@@ -54,6 +61,9 @@ private:
 
     void applyMigrations();
     void execSqlFromFile(const QString &path);
+
+    QSharedPointer<Category> createCategoryFromSql(QSqlQuery &q);
+    QSharedPointer<Tag> createTagFromSql(QSqlQuery &q);
 };
 
 } // namespace deeper

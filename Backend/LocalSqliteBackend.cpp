@@ -11,23 +11,7 @@
 
 namespace deeper {
 
-static QSharedPointer<Category> categoryFromSql(QSqlQuery &q)
-{
-    auto category = QSharedPointer<Category>::create();
-    category->setId(q.value("id").toInt());
-
-    bool ok = true;
-    category->setParentId(q.value("parent_id").toInt(&ok));
-    if (!ok) {
-        category->setParentId(BackendEntity::InvalidId);
-    }
-
-    category->setOrderIndex(q.value("order_index").toInt());
-    category->setTitle(q.value("title").toString());
-    category->setIsArchived(q.value("is_archived").toBool());
-
-    return category;
-}
+static const QVariant DbNull = QVariant(QVariant::String);
 
 LocalSqliteBackend::LocalSqliteBackend(const QString &path)
 {
@@ -80,8 +64,7 @@ QList<QSharedPointer<Category> > LocalSqliteBackend::categoryChildren(int parent
 
         auto category = m_categories.value(id);
         if (category.isNull()) {
-            category = categoryFromSql(q);
-            m_categories[category->id()] = category;
+            category = this->createCategoryFromSql(q);
         }
 
         result.append(category);
@@ -133,9 +116,7 @@ QSharedPointer<Category> LocalSqliteBackend::categoryWithId(int id)
         q.exec();
 
         if (q.next()) {
-            category = categoryFromSql(q);
-            category->__setBackend(this);
-            m_categories[category->id()] = category;
+            category = this->createCategoryFromSql(q);
         }
     }
     return category;
@@ -158,7 +139,7 @@ void LocalSqliteBackend::saveCategory(int id)
 
 void LocalSqliteBackend::removeCategory(int id)
 {
-    auto category = m_categories.value(id);
+    auto category = this->categoryWithId(id);
     if (category.isNull()) {
         throw std::runtime_error("Invalid category ID");
     }
@@ -251,6 +232,116 @@ void LocalSqliteBackend::moveCategory(int id, int newParentId, int index)
     });
 }
 
+QSharedPointer<Tag> LocalSqliteBackend::createTag(const QString &title)
+{
+    auto q = this->prepare("INSERT INTO tags (title) VALUES (:title)");
+    q.bindValue(":title", title);
+    this->exec(q);
+    return this->tagWithId(q.lastInsertId().toInt());
+}
+
+QList<QSharedPointer<Tag>> LocalSqliteBackend::tags()
+{
+    QList<QSharedPointer<Tag>> result;
+    auto q = this->exec("SELECT * FROM tags ORDER BY title");
+    while (q.next()) {
+        auto tagId = q.value("id").toInt();
+        auto tag = m_tags.value(tagId);
+        if (tag.isNull()) {
+            tag = this->createTagFromSql(q);
+        }
+
+        result.append(tag);
+    }
+    return result;
+}
+
+QSharedPointer<Tag> LocalSqliteBackend::tagWithId(int id)
+{
+    auto tag = m_tags.value(id);
+    if (tag.isNull()) {
+        auto q = this->prepare("SELECT * FROM tags WHERE id=:id");
+        q.bindValue(":id", id);
+        this->exec(q);
+
+        if (q.next()) {
+            tag = this->createTagFromSql(q);
+        }
+    }
+    return tag;
+}
+
+void LocalSqliteBackend::saveTag(int id)
+{
+    auto tag = m_tags.value(id);
+    if (tag.isNull()) {
+        throw std::runtime_error("Invalid tag ID");
+    }
+
+    auto q = this->prepare("UPDATE tags SET title=:title, color=:color WHERE id=:id");
+    q.bindValue(":id", id);
+    q.bindValue(":title", tag->title());
+    q.bindValue(":color", tag->color().isEmpty() ? DbNull : tag->color());
+    this->exec(q);
+}
+
+void LocalSqliteBackend::removeTag(int id)
+{
+    auto tag = this->tagWithId(id);
+    if (tag.isNull()) {
+        throw std::runtime_error("Invalid tag ID");
+    }
+
+    this->doInTransaction([=]() {
+        auto q = this->prepare("DELETE FROM tags WHERE id=:id");
+        q.bindValue(":id", tag->id());
+        this->exec(q);
+    });
+}
+
+QList<QSharedPointer<Tag>> LocalSqliteBackend::tagsForCategory(int categoryId)
+{
+    QList<QSharedPointer<Tag>> tags;
+
+    auto q = this->prepare("SELECT tag_id FROM categories_tags WHERE category_id=:category_id");
+    q.bindValue(":category_id", categoryId);
+    this->exec(q);
+
+    while (q.next()) {
+        auto tag = this->tagWithId(q.value("tag_id").toInt());
+        tags.append(tag);
+    }
+
+    return tags;
+}
+
+void LocalSqliteBackend::assignTagToCategory(int categoryId, int tagId)
+{
+    auto q = this->prepare("SELECT COUNT(*) FROM categories_tags WHERE category_id=:category_id AND tag_id=:tag_id");
+    q.bindValue(":category_id", categoryId);
+    q.bindValue(":tag_id", tagId);
+    this->exec(q);
+
+    q.next();
+    bool alreadyExist = (q.value(0).toInt() > 0);
+    if (alreadyExist) {
+        return;
+    }
+
+    q = this->prepare("INSERT INTO categories_tags (category_id, tag_id) VALUES(:category_id, :tag_id)");
+    q.bindValue(":category_id", categoryId);
+    q.bindValue(":tag_id", tagId);
+    this->exec(q);
+}
+
+void LocalSqliteBackend::removeTagFromCategory(int categoryId, int tagId)
+{
+    auto q = this->prepare("DELETE FROM categories_tags WHERE category_id=:category_id AND tag_id=:tag_id");
+    q.bindValue(":category_id", categoryId);
+    q.bindValue(":tag_id", tagId);
+    this->exec(q);
+}
+
 QSqlQuery LocalSqliteBackend::prepare(const QString &s)
 {
     QSqlQuery q(m_db);
@@ -277,12 +368,12 @@ QSqlQuery LocalSqliteBackend::exec(const QString &q)
 
 void LocalSqliteBackend::bindIdOrNull(QSqlQuery &q, const QString &id, int value)
 {
-    q.bindValue(id, value != BackendEntity::InvalidId ? value : QVariant(QVariant::String));
+    q.bindValue(id, value != BackendEntity::InvalidId ? value : DbNull);
 }
 
 void LocalSqliteBackend::bindEntityIdOrNull(QSqlQuery &q, const QString &id, BackendEntity *ptr)
 {
-    q.bindValue(id, ptr == nullptr ? QVariant(QVariant::String) : ptr->id());
+    q.bindValue(id, ptr == nullptr ? DbNull : ptr->id());
 }
 
 QList<int> LocalSqliteBackend::getAllDeepCategoryChildrenIds(int id)
@@ -356,6 +447,41 @@ void LocalSqliteBackend::execSqlFromFile(const QString &path)
             this->exec(query);
         }
     }
+}
+
+QSharedPointer<Category> LocalSqliteBackend::createCategoryFromSql(QSqlQuery &q)
+{
+    auto category = QSharedPointer<Category>::create();
+    category->setId(q.value("id").toInt());
+
+    bool ok = true;
+    category->setParentId(q.value("parent_id").toInt(&ok));
+    if (!ok) {
+        category->setParentId(BackendEntity::InvalidId);
+    }
+
+    category->setOrderIndex(q.value("order_index").toInt());
+    category->setTitle(q.value("title").toString());
+    category->setIsArchived(q.value("is_archived").toBool());
+
+    category->__setBackend(this);
+    m_categories[category->id()] = category;
+
+    return category;
+}
+
+QSharedPointer<Tag> LocalSqliteBackend::createTagFromSql(QSqlQuery &q)
+{
+    auto tag = QSharedPointer<Tag>::create();
+
+    tag->setId(q.value("id").toInt());
+    tag->setTitle(q.value("title").toString());
+    tag->setColor(q.value("color").toString());
+
+    tag->__setBackend(this);
+    m_tags[tag->id()] = tag;
+
+    return tag;
 }
 
 void LocalSqliteBackend::doInTransaction(std::function<void ()> fn)

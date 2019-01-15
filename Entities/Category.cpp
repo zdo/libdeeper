@@ -48,4 +48,19 @@ void Category::setIsArchived(bool isArchived)
     m_isArchived = isArchived;
 }
 
+QList<QSharedPointer<Tag> > Category::tags() const
+{
+    return this->getBackendOrError()->tagsForCategory(this->id());
+}
+
+void Category::assignTag(const QSharedPointer<Tag> &tag)
+{
+    this->getBackendOrError()->assignTagToCategory(this->id(), tag->id());
+}
+
+void Category::removeTag(const QSharedPointer<Tag> &tag)
+{
+    this->getBackendOrError()->removeTagFromCategory(this->id(), tag->id());
+}
+
 } // namespace deeper

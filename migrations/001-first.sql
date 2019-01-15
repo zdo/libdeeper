@@ -10,6 +10,7 @@ CREATE TABLE categories (
     `is_archived` BOOLEAN NOT NULL DEFAULT FALSE,
     `parent_id` INTEGER,
     `order_index` INTEGER NOT NULL DEFAULT 0,
+    `color` TEXT,
     FOREIGN KEY(`parent_id`) REFERENCES `categories`(`id`) ON DELETE CASCADE
 );
 
@@ -32,7 +33,7 @@ CREATE TABLE notes (
 CREATE TABLE note_states (
     `id` INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
     `title` TEXT NOT NULL,
-    `color` TEXT NOT NULL,
+    `color` TEXT,
     `is_finished` BOOLEAN NOT NULL DEFAULT FALSE,
     `order_index` INTEGER NOT NULL DEFAULT 0
 );
@@ -50,10 +51,18 @@ CREATE TABLE note_states_history (
 CREATE TABLE tags (
     `id` INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
     `title` TEXT NOT NULL,
-    `color` TEXT NOT NULL
+    `color` TEXT
 );
 
-CREATE TABLE note_tags (
+CREATE TABLE categories_tags (
+    `id` INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
+    `category_id` INTEGER NOT NULL,
+    `tag_id` INTEGER NOT NULL,
+    FOREIGN KEY(`tag_id`) REFERENCES `tags`(`id`) ON DELETE CASCADE,
+    FOREIGN KEY(`category_id`) REFERENCES `categories`(`id`) ON DELETE CASCADE
+);
+
+CREATE TABLE notes_tags (
     `id` INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE,
     `note_id` INTEGER NOT NULL,
     `tag_id` INTEGER NOT NULL,

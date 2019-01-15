@@ -108,6 +108,33 @@ private slots:
         QCOMPARE(child5->orderIndex(), 0);
         QCOMPARE(child3->orderIndex(), 1);
     }
+
+    void tagTest1()
+    {
+        auto backend = LocalSqliteBackend(":memory:");
+
+        auto root = backend.createCategory();
+        auto child1 = backend.createCategory(root->id());
+
+        auto tag1 = backend.createTag("tag1");
+        QCOMPARE(tag1->title(), "tag1");
+
+        child1->assignTag(tag1);
+        QCOMPARE(root->tags().count(), 0);
+        QCOMPARE(child1->tags().count(), 1);
+        QCOMPARE(child1->tags()[0], tag1);
+
+        child1->removeTag(tag1);
+        QCOMPARE(child1->tags().count(), 0);
+
+        root->assignTag(tag1);
+        QCOMPARE(child1->tags().count(), 0);
+        QCOMPARE(root->tags().count(), 1);
+
+        tag1->remove();
+        QCOMPARE(child1->tags().count(), 0);
+        QCOMPARE(root->tags().count(), 0);
+    }
 };
 
 #endif // LOCALSQLITEBACKENDTEST_HPP

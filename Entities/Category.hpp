@@ -2,6 +2,7 @@
 #define CATEGORY_HPP
 
 #include "./Helpers/BackendFamilyEntity.hpp"
+#include "./Tag.hpp"
 #include <QString>
 #include <QSharedPointer>
 
@@ -22,6 +23,10 @@ public:
 
     bool isArchived() const;
     void setIsArchived(bool isArchived);
+
+    QList<QSharedPointer<Tag>> tags() const;
+    void assignTag(const QSharedPointer<Tag> &tag);
+    void removeTag(const QSharedPointer<Tag> &tag);
 
 private:
     QString m_title;

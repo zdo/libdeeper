@@ -6,7 +6,7 @@
 
 namespace deeper {
 
-class Tag :  public BackendEntity
+class Tag : public BackendEntity
 {
 public:
     QString title() const;
@@ -14,6 +14,9 @@ public:
 
     QString color() const;
     void setColor(const QString &color);
+
+    void save() override;
+    void remove();
 
 private:
     QString m_title;
