@@ -144,11 +144,11 @@ private slots:
         auto child1 = backend.createCategory(root->id());
         QCOMPARE(root->rootNotes().count(), 0);
 
-        auto note1 = backend.createNote(root->id());
+        auto note1 = root->createNote();
         QCOMPARE(root->rootNotes().count(), 1);
         QCOMPARE(child1->rootNotes().count(), 0);
 
-        auto note2 = backend.createNote(child1->id());
+        auto note2 = child1->createNote();
         QCOMPARE(root->rootNotes().count(), 1);
         QCOMPARE(child1->rootNotes().count(), 1);
         QCOMPARE(note1->children().count(), 0);

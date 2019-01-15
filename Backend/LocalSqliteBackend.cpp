@@ -666,12 +666,12 @@ void LocalSqliteBackend::applyMigrations()
         }
 
         if (currentVersion < migrationVersion) {
-            qDebug() << "Apply migration" << migrationVersion;
+//            qDebug() << "Apply migration" << migrationVersion;
             this->doInTransaction([=]() {
                 this->execSqlFromFile(migrationFilePath);
             });
         } else {
-            qDebug() << "Skip migration" << migrationVersion;
+//            qDebug() << "Skip migration" << migrationVersion;
         }
     }
 }

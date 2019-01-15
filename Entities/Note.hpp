@@ -52,6 +52,8 @@ public:
     QSharedPointer<Note> parent() const;
     QList<QSharedPointer<Note>> children() const;
 
+    QSharedPointer<Note> createChildNote();
+
 private:
     QDateTime m_creationTime;
     bool m_isArchived = false;

@@ -9,8 +9,6 @@
 
 namespace deeper {
 
-class Note;
-
 class Category : public BackendFamilyEntity
 {
 public:
@@ -23,6 +21,8 @@ public:
     void save() override;
     void remove();
     void move(const QSharedPointer<Category> &newParent, int index = -1);
+    QSharedPointer<Note> createNote();
+    QSharedPointer<Category> createChildCategory();
 
     bool isArchived() const;
     void setIsArchived(bool isArchived);

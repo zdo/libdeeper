@@ -42,6 +42,16 @@ void Category::move(const QSharedPointer<Category> &newParent, int index)
     this->getBackendOrError()->moveCategory(this->id(), newParent.isNull() ? InvalidId : newParent->id(), index);
 }
 
+QSharedPointer<Note> Category::createNote()
+{
+    return this->getBackendOrError()->createNote(this->id(), InvalidId);
+}
+
+QSharedPointer<Category> Category::createChildCategory()
+{
+    return this->getBackendOrError()->createCategory(this->id());
+}
+
 bool Category::isArchived() const
 {
     return m_isArchived;

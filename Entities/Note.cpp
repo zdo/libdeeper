@@ -109,4 +109,9 @@ QList<QSharedPointer<Note> > Note::children() const
     return this->getBackendOrError()->noteChildren(m_categoryId, this->id());
 }
 
+QSharedPointer<Note> Note::createChildNote()
+{
+    return this->getBackendOrError()->createNote(m_categoryId, this->id());
+}
+
 } // namespace deeper
