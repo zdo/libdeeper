@@ -38,6 +38,16 @@ public:
     void assignTagToCategory(int categoryId, int tagId) override;
     void removeTagFromCategory(int categoryId, int tagId) override;
 
+    // Notes.
+    QList<QSharedPointer<Note>> rootNotesForCategory(int categoryId) override;
+    QList<QSharedPointer<Note>> noteChildren(int categoryId, int parentNoteId) override;
+    int noteChildrenCount(int categoryId, int parentNoteId) override;
+    QSharedPointer<Note> createNote(int parentCategoryId, int parentNoteId = BackendEntity::InvalidId) override;
+    QSharedPointer<Note> noteWithId(int id) override;
+    void saveNote(int id) override;
+    void removeNote(int id) override;
+    void moveNote(int id, int newParentCategory, int newParentNoteId, int index = -1) override;
+
 private:
     QString m_path;
     QSqlDatabase m_db;
@@ -54,16 +64,21 @@ private:
     QSqlQuery exec(const QString &q);
     void doInTransaction(std::function<void ()> fn);
 
-    void bindIdOrNull(QSqlQuery &q, const QString &id, int value);
-    void bindEntityIdOrNull(QSqlQuery &q, const QString &id, BackendEntity *ptr);
+    void bindValueOrNull(QSqlQuery &q, const QString &id, int value);
+    void bindValueOrNull(QSqlQuery &q, const QString &id, BackendEntity *ptr);
+    void bindValueOrNull(QSqlQuery &q, const QString &id, const QString &value);
+    void bindValueOrNull(QSqlQuery &q, const QString &id, const QDateTime &value);
+    QDateTime dateTimeFromQuery(QSqlQuery &q, const QString &id);
 
     QList<int> getAllDeepCategoryChildrenIds(int id);
+    QList<int> getAllDeepNoteChildrenIds(int id);
 
     void applyMigrations();
     void execSqlFromFile(const QString &path);
 
     QSharedPointer<Category> createCategoryFromSql(QSqlQuery &q);
     QSharedPointer<Tag> createTagFromSql(QSqlQuery &q);
+    QSharedPointer<Note> createNoteFromSql(QSqlQuery &q);
 };
 
 } // namespace deeper

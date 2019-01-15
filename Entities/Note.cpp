@@ -1,4 +1,6 @@
 #include "Note.hpp"
+#include "../Backend/AbstractBackend.hpp"
+#include "Category.hpp"
 
 namespace deeper {
 
@@ -60,6 +62,51 @@ Note::DateTimeWithDuration Note::scheduledTime() const
 void Note::setScheduledTime(const DateTimeWithDuration &scheduledTime)
 {
     m_scheduledTime = scheduledTime;
+}
+
+bool Note::isArchived() const
+{
+    return m_isArchived;
+}
+
+void Note::setIsArchived(bool isArchived)
+{
+    m_isArchived = isArchived;
+}
+
+void Note::save()
+{
+    this->getBackendOrError()->saveNote(this->id());
+}
+
+void Note::remove()
+{
+    this->getBackendOrError()->removeNote(this->id());
+}
+
+void Note::move(const QSharedPointer<Category> &newCategory, const QSharedPointer<Note> &newParentNote, int index)
+{
+    this->getBackendOrError()->moveNote(this->id(), newCategory->id(),
+                                        newParentNote.isNull() ? InvalidId : newParentNote->id(),
+                                        index);
+}
+
+QSharedPointer<Category> Note::category() const
+{
+    return this->getBackendOrError()->categoryWithId(m_categoryId);
+}
+
+QSharedPointer<Note> Note::parent() const
+{
+    if (m_parentId == InvalidId) {
+        return nullptr;
+    }
+    return this->getBackendOrError()->noteWithId(m_parentId);
+}
+
+QList<QSharedPointer<Note> > Note::children() const
+{
+    return this->getBackendOrError()->noteChildren(m_categoryId, this->id());
 }
 
 } // namespace deeper

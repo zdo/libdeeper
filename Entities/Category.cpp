@@ -1,5 +1,6 @@
 #include "Category.hpp"
 #include "../Backend/AbstractBackend.hpp"
+#include "./Note.hpp"
 
 namespace deeper {
 
@@ -15,6 +16,9 @@ void Category::setTitle(const QString &title)
 
 QSharedPointer<Category> Category::parent()
 {
+    if (m_parentId == InvalidId) {
+        return nullptr;
+    }
     return this->getBackendOrError()->categoryWithId(m_parentId);
 }
 
@@ -61,6 +65,11 @@ void Category::assignTag(const QSharedPointer<Tag> &tag)
 void Category::removeTag(const QSharedPointer<Tag> &tag)
 {
     this->getBackendOrError()->removeTagFromCategory(this->id(), tag->id());
+}
+
+QList<QSharedPointer<Note> > Category::rootNotes() const
+{
+    return this->getBackendOrError()->rootNotesForCategory(this->id());
 }
 
 } // namespace deeper

@@ -43,6 +43,16 @@ public:
     virtual void assignTagToCategory(int categoryId, int tagId) = 0;
     virtual void removeTagFromCategory(int categoryId, int tagId) = 0;
 
+    // Notes.
+    virtual QList<QSharedPointer<Note>> rootNotesForCategory(int categoryId) = 0;
+    virtual QList<QSharedPointer<Note>> noteChildren(int categoryId, int parentNoteId) = 0;
+    virtual int noteChildrenCount(int categoryId, int parentNoteId) = 0;
+    virtual QSharedPointer<Note> createNote(int parentCategoryId, int parentNoteId = BackendEntity::InvalidId) = 0;
+    virtual QSharedPointer<Note> noteWithId(int id) = 0;
+    virtual void saveNote(int id) = 0;
+    virtual void removeNote(int id) = 0;
+    virtual void moveNote(int id, int newParentCategory, int newParentNoteId, int index = -1) = 0;
+
 };
 
 } // namespace deeper

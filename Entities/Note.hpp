@@ -9,8 +9,11 @@
 
 #include <QList>
 #include <QDateTime>
+#include <QSharedPointer>
 
 namespace deeper {
+
+class Category;
 
 class Note : public BackendFamilyEntity
 {
@@ -37,6 +40,17 @@ public:
 
     DateTimeWithDuration scheduledTime() const;
     void setScheduledTime(const DateTimeWithDuration &scheduledTime);
+
+    bool isArchived() const;
+    void setIsArchived(bool isArchived);
+
+    void save() override;
+    void remove();
+    void move(const QSharedPointer<Category> &newCategory, const QSharedPointer<Note> &newParentNote, int index = -1);
+
+    QSharedPointer<Category> category() const;
+    QSharedPointer<Note> parent() const;
+    QList<QSharedPointer<Note>> children() const;
 
 private:
     QDateTime m_creationTime;

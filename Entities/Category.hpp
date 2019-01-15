@@ -3,10 +3,13 @@
 
 #include "./Helpers/BackendFamilyEntity.hpp"
 #include "./Tag.hpp"
+#include "./Note.hpp"
 #include <QString>
 #include <QSharedPointer>
 
 namespace deeper {
+
+class Note;
 
 class Category : public BackendFamilyEntity
 {
@@ -27,6 +30,8 @@ public:
     QList<QSharedPointer<Tag>> tags() const;
     void assignTag(const QSharedPointer<Tag> &tag);
     void removeTag(const QSharedPointer<Tag> &tag);
+
+    QList<QSharedPointer<Note>> rootNotes() const;
 
 private:
     QString m_title;

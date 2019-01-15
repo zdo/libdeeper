@@ -94,7 +94,7 @@ QSharedPointer<Category> LocalSqliteBackend::createCategory(int parentId)
 
     auto q = this->prepare("INSERT INTO categories (title, parent_id, order_index) VALUES (:title, :parent_id, :order_index)");
     q.bindValue(":title", "New category");
-    this->bindIdOrNull(q, ":parent_id", parentId);
+    this->bindValueOrNull(q, ":parent_id", parentId);
     q.bindValue(":order_index", orderIndex);
     this->exec(q);
 
@@ -132,7 +132,7 @@ void LocalSqliteBackend::saveCategory(int id)
     auto q = this->prepare("UPDATE categories SET title=:title, parent_id=:parent_id, order_index=:order_index WHERE id=:id");
     q.bindValue(":id", category->id());
     q.bindValue(":title", category->title());
-    this->bindIdOrNull(q, ":parent_id", category->parentId());
+    this->bindValueOrNull(q, ":parent_id", category->parentId());
     q.bindValue(":order_index", category->orderIndex());
     this->exec(q);
 }
@@ -193,8 +193,7 @@ void LocalSqliteBackend::moveCategory(int id, int newParentId, int index)
 
     this->doInTransaction([=]() {
         // Fix indices of old siblings.
-        auto oldParent = category->parent();
-        for (auto sibling : oldParent->children()) {
+        for (auto sibling : this->categoryChildren(category->parentId())) {
             if (sibling == category) {
                 continue;
             }
@@ -281,7 +280,7 @@ void LocalSqliteBackend::saveTag(int id)
     auto q = this->prepare("UPDATE tags SET title=:title, color=:color WHERE id=:id");
     q.bindValue(":id", id);
     q.bindValue(":title", tag->title());
-    q.bindValue(":color", tag->color().isEmpty() ? DbNull : tag->color());
+    this->bindValueOrNull(q, ":color", tag->color());
     this->exec(q);
 }
 
@@ -342,6 +341,217 @@ void LocalSqliteBackend::removeTagFromCategory(int categoryId, int tagId)
     this->exec(q);
 }
 
+QList<QSharedPointer<Note> > LocalSqliteBackend::rootNotesForCategory(int categoryId)
+{
+    QList<QSharedPointer<Note>> result;
+
+    auto q = this->prepare("SELECT * FROM notes WHERE category_id=:category_id AND parent_note_id IS NULL ORDER BY order_index");
+    q.bindValue(":category_id", categoryId);
+    this->exec(q);
+
+    while (q.next()) {
+        auto noteId = q.value("id").toInt();
+        auto note = m_notes.value(noteId);
+        if (note.isNull()) {
+            note = this->createNoteFromSql(q);
+        }
+
+        result.append(note);
+    }
+    return result;
+}
+
+QList<QSharedPointer<Note> > LocalSqliteBackend::noteChildren(int categoryId, int parentNoteId)
+{
+    QList<QSharedPointer<Note>> result;
+
+    auto q = this->prepare(parentNoteId == BackendEntity::InvalidId
+                           ? "SELECT * FROM notes WHERE category_id=:category_id AND parent_note_id IS NULL ORDER BY order_index"
+                           : "SELECT * FROM notes WHERE category_id=:category_id AND parent_note_id=:parent_id ORDER BY order_index");
+    q.bindValue(":category_id", categoryId);
+    if (parentNoteId != BackendEntity::InvalidId) {
+        q.bindValue(":parent_id", parentNoteId);
+    }
+    this->exec(q);
+
+    while (q.next()) {
+        auto noteId = q.value("id").toInt();
+        auto note = m_notes.value(noteId);
+        if (note.isNull()) {
+            note = this->createNoteFromSql(q);
+        }
+
+        result.append(note);
+    }
+    return result;
+}
+
+int LocalSqliteBackend::noteChildrenCount(int categoryId, int parentNoteId)
+{
+    auto q = this->prepare(parentNoteId == BackendEntity::InvalidId
+                           ? "SELECT COUNT(*) FROM notes WHERE category_id=:category_id AND parent_note_id IS NULL ORDER BY order_index"
+                           : "SELECT COUNT(*) FROM notes WHERE category_id=:category_id AND parent_note_id=:parent_id ORDER BY order_index");
+    q.bindValue(":category_id", categoryId);
+    if (parentNoteId != BackendEntity::InvalidId) {
+        q.bindValue(":parent_id", parentNoteId);
+    }
+    this->exec(q);
+    q.next();
+
+    return q.value(0).toInt();
+}
+
+QSharedPointer<Note> LocalSqliteBackend::createNote(int parentCategoryId, int parentNoteId)
+{
+    int newIndex = this->noteChildrenCount(parentCategoryId, parentNoteId);
+    auto q = this->prepare("INSERT INTO notes (title, category_id, parent_note_id, order_index) "
+                           "VALUES (:title, :category_id, :parent_id, :order_index)");
+    q.bindValue(":title", QString("New Note #%1").arg(newIndex + 1));
+    q.bindValue(":category_id", parentCategoryId);
+    this->bindValueOrNull(q, ":parent_id", parentNoteId);
+    q.bindValue(":order_index", newIndex);
+    this->exec(q);
+
+    return this->noteWithId(q.lastInsertId().toInt());
+}
+
+QSharedPointer<Note> LocalSqliteBackend::noteWithId(int id)
+{
+    auto note = m_notes.value(id);
+    if (note.isNull()) {
+        auto q = this->prepare("SELECT * FROM notes WHERE id=:id");
+        q.bindValue(":id", id);
+        this->exec(q);
+
+        if (q.next()) {
+            note = this->createNoteFromSql(q);
+        }
+    }
+    return note;
+}
+
+void LocalSqliteBackend::saveNote(int id)
+{
+    auto note = m_notes.value(id);
+    if (note.isNull()) {
+        throw std::runtime_error("Invalid note ID");
+    }
+
+    auto q= this->prepare("UPDATE notes SET title=:title, text=:text, category_id=:category_id,"
+                          " parent_note_id=:parent_id, order_index=:order_index, is_archived=:is_archived,"
+                          " scheduled=:scheduled, scheduled_duration=:scheduled_duration, deadline=:deadline"
+                          " WHERE id=:id");
+    q.bindValue(":id", id);
+    q.bindValue(":title", note->title());
+    this->bindValueOrNull(q, ":text", note->text());
+    q.bindValue(":is_archived", note->isArchived());
+
+    q.bindValue(":category_id", note->categoryId());
+    this->bindValueOrNull(q, ":parent_id", note->parentId());
+    q.bindValue(":order_index", note->parentId() == BackendEntity::InvalidId ? DbNull : note->orderIndex());
+
+    this->bindValueOrNull(q, ":scheduled", note->scheduledTime().dateTime);
+    q.bindValue(":scheduled_duration", note->scheduledTime().dateTime.isNull() ? DbNull : note->scheduledTime().durationSeconds);
+    this->bindValueOrNull(q, ":deadline", note->deadlineTime());
+    this->exec(q);
+}
+
+void LocalSqliteBackend::removeNote(int id)
+{
+    auto note = this->noteWithId(id);
+    if (note.isNull()) {
+        throw std::runtime_error("Invalid note ID");
+    }
+
+    this->doInTransaction([=]() {
+        QList<int> childrenIdToRemove = this->getAllDeepNoteChildrenIds(id);
+
+        for (auto sibling : this->noteChildren(note->categoryId(), note->parentId())) {
+            if (sibling == note) {
+                continue;
+            }
+
+            if (sibling->orderIndex() > note->orderIndex()) {
+                sibling->setOrderIndex(sibling->orderIndex() - 1);
+                sibling->save();
+            }
+        }
+
+        auto q = this->prepare("DELETE FROM notes WHERE id=:id");
+        q.bindValue(":id", note->id());
+        this->exec(q);
+
+        childrenIdToRemove.append(id);
+        for (auto noteId : childrenIdToRemove) {
+            auto toRemove = m_notes.value(noteId);
+            if (!toRemove.isNull()) {
+                toRemove->setId(BackendEntity::InvalidId);
+                m_categories.remove(noteId);
+            }
+        }
+    });
+}
+
+void LocalSqliteBackend::moveNote(int id, int newParentCategory, int newParentNoteId, int index)
+{
+    auto note = this->noteWithId(id);
+    if (note.isNull()) {
+        throw std::runtime_error("Invalid note ID");
+    }
+
+    if (newParentNoteId != BackendEntity::InvalidId) {
+        auto parentChecked = this->noteWithId(newParentNoteId);
+        while (!parentChecked.isNull()) {
+            if (parentChecked == note) {
+                // We're trying add parent to its child. That's forbidden.
+                return;
+            }
+            parentChecked = parentChecked->parent();
+        }
+    }
+
+    this->doInTransaction([=]() {
+        // Fix indices of old siblings.
+        auto oldSiblings = this->noteChildren(note->categoryId(), note->parentId());
+        for (auto sibling : oldSiblings) {
+            if (sibling == note) {
+                continue;
+            }
+
+            if (sibling->orderIndex() > note->orderIndex()) {
+                sibling->setOrderIndex(sibling->orderIndex() - 1);
+                sibling->save();
+            }
+        }
+
+        // Validate new orderIndex.
+        auto newSiblings = this->noteChildren(newParentCategory, newParentNoteId);
+
+        int newIndex = index;
+        if (newIndex < 0) {
+            newIndex = newSiblings.count();
+        }
+        newIndex = qBound(0, newIndex, newSiblings.count());
+
+        note->setOrderIndex(newIndex);
+        note->setCategoryId(newParentCategory);
+        note->setParentId(newParentNoteId);
+        note->save();
+
+        // Fix indices of new siblings.
+        for (auto sibling : newSiblings) {
+            if (sibling == note) {
+                continue;
+            }
+
+            if (sibling->orderIndex() >= note->orderIndex()) {
+                sibling->setOrderIndex(sibling->orderIndex() + 1);
+                sibling->save();
+            }
+        }
+    });
+}
+
 QSqlQuery LocalSqliteBackend::prepare(const QString &s)
 {
     QSqlQuery q(m_db);
@@ -366,14 +576,33 @@ QSqlQuery LocalSqliteBackend::exec(const QString &q)
     return query;
 }
 
-void LocalSqliteBackend::bindIdOrNull(QSqlQuery &q, const QString &id, int value)
+void LocalSqliteBackend::bindValueOrNull(QSqlQuery &q, const QString &id, int value)
 {
     q.bindValue(id, value != BackendEntity::InvalidId ? value : DbNull);
 }
 
-void LocalSqliteBackend::bindEntityIdOrNull(QSqlQuery &q, const QString &id, BackendEntity *ptr)
+void LocalSqliteBackend::bindValueOrNull(QSqlQuery &q, const QString &id, BackendEntity *ptr)
 {
     q.bindValue(id, ptr == nullptr ? DbNull : ptr->id());
+}
+
+void LocalSqliteBackend::bindValueOrNull(QSqlQuery &q, const QString &id, const QString &value)
+{
+    q.bindValue(id, value.isEmpty() ? DbNull : value);
+}
+
+void LocalSqliteBackend::bindValueOrNull(QSqlQuery &q, const QString &id, const QDateTime &value)
+{
+    q.bindValue(id, value.isNull() ? DbNull : value);
+}
+
+QDateTime LocalSqliteBackend::dateTimeFromQuery(QSqlQuery &q, const QString &id)
+{
+    if (q.isNull(id)) {
+        return QDateTime();
+    } else {
+        return QDateTime::fromSecsSinceEpoch(q.value(id).toLongLong());
+    }
 }
 
 QList<int> LocalSqliteBackend::getAllDeepCategoryChildrenIds(int id)
@@ -388,6 +617,23 @@ QList<int> LocalSqliteBackend::getAllDeepCategoryChildrenIds(int id)
         int childId = q.value("id").toInt();
         result.append(childId);
         result.append(this->getAllDeepCategoryChildrenIds(childId));
+    }
+
+    return result;
+}
+
+QList<int> LocalSqliteBackend::getAllDeepNoteChildrenIds(int id)
+{
+    QList<int> result;
+
+    auto q = this->prepare("SELECT id FROM notes WHERE parent_note_id=:parent_id");
+    q.bindValue(":parent_id", id);
+    this->exec(q);
+
+    while (q.next()) {
+        int childId = q.value("id").toInt();
+        result.append(childId);
+        result.append(this->getAllDeepNoteChildrenIds(childId));
     }
 
     return result;
@@ -482,6 +728,40 @@ QSharedPointer<Tag> LocalSqliteBackend::createTagFromSql(QSqlQuery &q)
     m_tags[tag->id()] = tag;
 
     return tag;
+}
+
+QSharedPointer<Note> LocalSqliteBackend::createNoteFromSql(QSqlQuery &q)
+{
+    auto note = QSharedPointer<Note>::create();
+    note->setId(q.value("id").toInt());
+
+    bool ok = true;
+    note->setParentId(q.value("parent_note_id").toInt(&ok));
+    if (!ok) {
+        note->setParentId(BackendEntity::InvalidId);
+    }
+
+    note->setOrderIndex(q.value("order_index").toInt());
+    note->setCategoryId(q.value("category_id").toInt());
+
+    note->setTitle(q.value("title").toString());
+    note->setText(q.value("text").toString());
+
+    note->setIsArchived(q.value("is_archived").toBool());
+
+    note->setCreationTime(this->dateTimeFromQuery(q, "creation_time"));
+
+    Note::DateTimeWithDuration scheduled;
+    scheduled.dateTime = this->dateTimeFromQuery(q, "scheduled");
+    scheduled.durationSeconds = q.value("scheduled_duration").toInt();
+    note->setScheduledTime(scheduled);
+
+    note->setDeadlineTime(this->dateTimeFromQuery(q, "deadline"));
+
+    note->__setBackend(this);
+    m_notes[note->id()] = note;
+
+    return note;
 }
 
 void LocalSqliteBackend::doInTransaction(std::function<void ()> fn)

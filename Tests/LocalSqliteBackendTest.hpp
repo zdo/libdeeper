@@ -135,6 +135,35 @@ private slots:
         QCOMPARE(child1->tags().count(), 0);
         QCOMPARE(root->tags().count(), 0);
     }
+
+    void notesTest1()
+    {
+        auto backend = LocalSqliteBackend(":memory:");
+
+        auto root = backend.createCategory();
+        auto child1 = backend.createCategory(root->id());
+        QCOMPARE(root->rootNotes().count(), 0);
+
+        auto note1 = backend.createNote(root->id());
+        QCOMPARE(root->rootNotes().count(), 1);
+        QCOMPARE(child1->rootNotes().count(), 0);
+
+        auto note2 = backend.createNote(child1->id());
+        QCOMPARE(root->rootNotes().count(), 1);
+        QCOMPARE(child1->rootNotes().count(), 1);
+        QCOMPARE(note1->children().count(), 0);
+        QCOMPARE(note2->children().count(), 0);
+
+        note2->move(root, note1);
+        QCOMPARE(root->rootNotes().count(), 1);
+        QCOMPARE(child1->rootNotes().count(), 0);
+        QCOMPARE(note1->children().count(), 1);
+        QCOMPARE(note2->children().count(), 0);
+
+        note1->remove();
+        QCOMPARE(root->rootNotes().count(), 0);
+        QCOMPARE(child1->rootNotes().count(), 0);
+    }
 };
 
 #endif // LOCALSQLITEBACKENDTEST_HPP
