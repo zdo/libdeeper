@@ -73,7 +73,6 @@ SOURCES += \
     Overview/TimeTable.cpp \
     Overview/Filter.cpp \
     Entities/Book.cpp \
-    Backend/AbstractBackend.cpp \
     Backend/BackendFactory.cpp \
     Backend/LocalSqliteBackend.cpp \
     Entities/Helpers/BackendEntity.cpp \

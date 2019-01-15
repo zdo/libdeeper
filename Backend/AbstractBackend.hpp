@@ -14,7 +14,7 @@ namespace deeper {
 class AbstractBackend
 {
 public:
-    virtual ~AbstractBackend();
+    virtual ~AbstractBackend() {}
 
     // Categories.
     virtual QList<QSharedPointer<Category>> rootCategories() = 0;
