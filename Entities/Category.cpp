@@ -38,4 +38,14 @@ void Category::move(const QSharedPointer<Category> &newParent, int index)
     this->getBackendOrError()->moveCategory(this->id(), newParent.isNull() ? InvalidId : newParent->id(), index);
 }
 
+bool Category::isArchived() const
+{
+    return m_isArchived;
+}
+
+void Category::setIsArchived(bool isArchived)
+{
+    m_isArchived = isArchived;
+}
+
 } // namespace deeper

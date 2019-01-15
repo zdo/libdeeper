@@ -7,6 +7,7 @@
 #include <QVariant>
 #include <QSqlDriver>
 #include <QDebug>
+#include <QDirIterator>
 
 namespace deeper {
 
@@ -23,6 +24,8 @@ static QSharedPointer<Category> categoryFromSql(QSqlQuery &q)
 
     category->setOrderIndex(q.value("order_index").toInt());
     category->setTitle(q.value("title").toString());
+    category->setIsArchived(q.value("is_archived").toBool());
+
     return category;
 }
 
@@ -46,10 +49,7 @@ LocalSqliteBackend::LocalSqliteBackend(const QString &path)
         throw std::runtime_error("Driver doesn't support Transactions feature");
 
     this->exec("PRAGMA foreign_keys = ON");
-
-    this->doInTransaction([=]() {
-        this->exec("CREATE TABLE categories ( `id` INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT UNIQUE, `title` TEXT NOT NULL, `parent_id` INTEGER, `order_index` INTEGER, FOREIGN KEY(`parent_id`) REFERENCES `categories`(`id`) ON DELETE CASCADE )");
-    });
+    this->applyMigrations();
 }
 
 LocalSqliteBackend::~LocalSqliteBackend()
@@ -266,12 +266,13 @@ void LocalSqliteBackend::exec(QSqlQuery &q)
     }
 }
 
-void LocalSqliteBackend::exec(const QString &q)
+QSqlQuery LocalSqliteBackend::exec(const QString &q)
 {
     auto query = m_db.exec(q);
     if (query.lastError().isValid()) {
         throw std::runtime_error(query.lastError().text().toStdString());
     }
+    return query;
 }
 
 void LocalSqliteBackend::bindIdOrNull(QSqlQuery &q, const QString &id, int value)
@@ -299,6 +300,62 @@ QList<int> LocalSqliteBackend::getAllDeepCategoryChildrenIds(int id)
     }
 
     return result;
+}
+
+void LocalSqliteBackend::applyMigrations()
+{
+    int currentVersion = 0;
+    try {
+        auto q = this->exec("SELECT value FROM deeper_config WHERE key='version'");
+        currentVersion = q.value("value").toString().toInt();
+    } catch (...) {
+        currentVersion = 0;
+    }
+
+    QDirIterator it(":/db/migrations");
+    while (it.hasNext()) {
+        auto migrationFilePath = it.next();
+        auto migrationFileName = QFileInfo(migrationFilePath).fileName();
+
+        auto migratonVersionStr = migrationFileName.split('-').first();
+        while (migratonVersionStr.startsWith('0')) {
+            migratonVersionStr = migratonVersionStr.mid(1);
+        }
+
+        bool ok = false;
+        int migrationVersion = migratonVersionStr.toInt(&ok);
+        if (!ok) {
+            throw std::runtime_error(("Can't parse migration version: " + migrationFileName).toStdString());
+        }
+
+        if (currentVersion < migrationVersion) {
+            qDebug() << "Apply migration" << migrationVersion;
+            this->doInTransaction([=]() {
+                this->execSqlFromFile(migrationFilePath);
+            });
+        } else {
+            qDebug() << "Skip migration" << migrationVersion;
+        }
+    }
+}
+
+void LocalSqliteBackend::execSqlFromFile(const QString &path)
+{
+    QFile file(path);
+    bool ok = file.open(QFile::ReadOnly);
+    if (!ok) {
+        throw std::runtime_error(("Can't open file " + path).toStdString());
+    }
+
+    QString content = file.readAll();
+    auto queries = content.split(';');
+
+    for (auto query : queries) {
+        auto queryFixed = query.trimmed();
+        if (queryFixed.length() > 0) {
+            this->exec(query);
+        }
+    }
 }
 
 void LocalSqliteBackend::doInTransaction(std::function<void ()> fn)

@@ -20,8 +20,12 @@ public:
     void remove();
     void move(const QSharedPointer<Category> &newParent, int index = -1);
 
+    bool isArchived() const;
+    void setIsArchived(bool isArchived);
+
 private:
     QString m_title;
+    bool m_isArchived = false;
 };
 
 } // namespace deeper

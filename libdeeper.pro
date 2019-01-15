@@ -98,3 +98,6 @@ HEADERS += \
     Backend/LocalSqliteBackend.hpp \
     Entities/Helpers/BackendEntity.hpp \
     Entities/Helpers/BackendFamilyEntity.hpp
+
+RESOURCES += \
+    Resources.qrc

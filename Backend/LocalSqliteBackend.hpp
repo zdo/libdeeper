@@ -44,13 +44,16 @@ private:
 
     QSqlQuery prepare(const QString &s);
     void exec(QSqlQuery &q);
-    void exec(const QString &q);
+    QSqlQuery exec(const QString &q);
+    void doInTransaction(std::function<void ()> fn);
 
     void bindIdOrNull(QSqlQuery &q, const QString &id, int value);
     void bindEntityIdOrNull(QSqlQuery &q, const QString &id, BackendEntity *ptr);
-    void removeCategoryAndChildren_r(int id);
+
     QList<int> getAllDeepCategoryChildrenIds(int id);
-    void doInTransaction(std::function<void ()> fn);
+
+    void applyMigrations();
+    void execSqlFromFile(const QString &path);
 };
 
 } // namespace deeper
